@@ -1,0 +1,90 @@
+{
+	"pages": [ //pages数组中第一项表示应用启动页，参考：https://uniapp.dcloud.io/collocation/pages
+		{
+			"path": "pages/waitRoom/index",
+			"style": {
+				"navigationBarTitleText": ""
+			}
+		},
+		{
+			"path": "pages/Index/index",
+			"style": {
+				"navigationBarTitleText": "首页"
+			}
+		},
+		{
+			"path": "pages/gameHall/index",
+			"style": {
+				"navigationBarTitleText": "大厅"
+			}
+		},
+		{
+			"path": "pages/myFriend/index",
+			"style": {
+				"navigationBarTitleText": "通讯录"
+			}
+		},
+		{
+			"path": "pages/Home/index",
+			"style": {
+				"navigationBarTitleText": "我"
+			}
+		}
+	],
+	"globalStyle": {
+		"navigationBarTextStyle": "black",
+		"navigationBarTitleText": "uni-app",
+		"navigationBarBackgroundColor": "#ffffff",
+		"usingComponents": {
+			"van-button": "/wxcomponents/vant/button/index",
+			"van-picker": "/wxcomponents/vant/picker/index",
+			"van-image": "/wxcomponents/vant/image/index",
+			"van-row": "/wxcomponents/vant/row/index",
+			"van-col": "/wxcomponents/vant/col/index",
+			"van-dialog": "/wxcomponents/vant/dialog/index",
+			"van-popup": "/wxcomponents/vant/popup/index",
+			"van-field": "/wxcomponents/vant/field/index",
+			"van-stepper": "/wxcomponents/vant/stepper/index",
+			"van-notice-bar": "/wxcomponents/vant/notice-bar/index",
+			"van-icon": "/wxcomponents/vant/icon/index",
+			"van-toast": "/wxcomponents/vant/toast/index",
+			"van-count-down":"/wxcomponents/vant/count-down/index",
+			"van-radio": "/wxcomponents/vant/radio/index",
+			"van-radio-group": "/wxcomponents/vant/radio-group/index",
+			"van-checkbox": "/wxcomponents/vant/checkbox/index",
+			"van-checkbox-group": "/wxcomponents/vant/checkbox-group/index",
+			"van-index-bar": "/wxcomponents/vant/index-bar/index",
+			"van-index-anchor": "/wxcomponents/vant/index-anchor/index",
+			"van-panel": "/wxcomponents/vant/panel/index",
+			"van-cell": "/wxcomponents/vant/cell/index",
+			"van-cell-group": "/wxcomponents/vant/cell-group/index",
+			"van-search": "/wxcomponents/vant/search/index",
+			"van-notify": "/wxcomponents/vant/notify/index"
+		}
+	},
+	"tabBar": {
+		"color": "#303030",
+		"selectedColor": "#ff4101",
+		"backgroundColor": "#f8f8f8",
+		"list": [
+			{
+				"pagePath": "pages/Index/index",
+				"text": "首页",
+				"iconPath": "static/tabbar/index.png",
+				"selectedIconPath": "static/tabbar/index-active.png"
+			},
+			{
+				"pagePath": "pages/myFriend/index",
+				"text": "通讯录",
+				"iconPath": "static/tabbar/friend.png",
+				"selectedIconPath": "static/tabbar/friend-active.png"
+			},
+			{
+				"pagePath": "pages/Home/index",
+				"text": "我",
+				"iconPath": "static/tabbar/me.png",
+				"selectedIconPath": "static/tabbar/me-active.png"
+			}
+		]
+	}
+}
