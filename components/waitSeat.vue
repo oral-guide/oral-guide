@@ -31,7 +31,7 @@ export default {
   &_avatar {
     width: 16vw;
     height: 16vw;
-    margin-bottom: 5px;
+    margin-bottom: 2px;
     border-radius: 50%;
     background-color: #fff;
     border: 1px solid #ccc;
@@ -63,7 +63,7 @@ export default {
 
   &_nick {
     width: 16vw;
-    height: 5vh;
+    height: 6vw;
     text-align: center;
     font-size: 12px;
     color: #333;

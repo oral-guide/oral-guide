@@ -1,32 +1,30 @@
 <template>
   <!-- 等待房间 -->
   <div class="wait">
+    <!-- 座位区 -->
     <div class="wait_seat">
       <waitSeat :seatInfo="seatInfo[i]" v-for="i in 8" :key="i"></waitSeat>
     </div>
-    <!-- todo: 准备按钮和设置放在中间 -->
-    <!-- <div class="wait_ready">
-      <van-row>
-        <van-col span="6" offset="10">
-          <van-button color="#ff4101" v-if="isHost" :disabled="!isAllReady">开始游戏</van-button>
-          <van-button color="#ff4101" v-else-if="!isReady" @click="toggleReady">准备</van-button>
-          <van-button color="#ff4101" plain v-else @click="toggleReady">取消准备</van-button>
-        </van-col>
-        <van-col span="2" offset="6">
-          <a class="wait_setting" v-if="isHost"></a>
-        </van-col>
-      </van-row>
-    </div> -->
-    <div class="wait_chat">聊天区域</div>
+    <!-- 准备/房间设置按钮 -->
+    <div class="wait_ready">
+      <van-button color="#ff4101" v-if="isHost" :disabled="!isAllReady">开始游戏</van-button>
+      <van-button color="#ff4101" v-else-if="!isReady" @click="toggleReady">准备</van-button>
+      <van-button color="#ff4101" plain v-else @click="toggleReady">取消准备</van-button>
+      <a class="wait_ready_setting" v-if="isHost"></a>
+    </div>
+    <chatArea></chatArea>
 	</div>
 </template>
 
 <script>
 import waitSeat from '../../components/waitSeat'
+import chatArea from '../../components/chatArea'
+
 export default {
   name: 'waitRoom',
   components: {
-    waitSeat
+    waitSeat,
+    chatArea
   },
   data() {
     return {
@@ -100,20 +98,13 @@ export default {
 <style lang="scss" scoped>
 .wait {
   height: 100vh;
-  padding-top: 10px;
+  // padding-top: 10px;
   background-color: #f8f8f8;
   overflow: hidden;
 
-  &_setting {
-    display: block;
-    width: 5vw;
-    height: 5vw;
-    background: url(../../static/waitRoom/setting_btn.png) no-repeat;
-    background-size: 100% 100%;
-  }
-
   &_seat {
-    height: 65vh;
+    height: 94vw;
+    margin-top: 10px;
     padding: 0 15px;
     display: flex;
     flex-direction: column;
@@ -122,13 +113,21 @@ export default {
 
   &_ready {
     margin-bottom: 10px;
-    // display: flex;
-    // justify-content: center;
-  }
+    display: flex;
+    justify-content: center;
+    position: relative;
 
-  &_chat {
-    height: 50vh;
-    background: cornflowerblue;
+    &_setting {
+      display: block;
+      position: absolute;
+      right: 20px;
+      bottom: 50%;
+      transform: translateY(50%);
+      width: 5vw;
+      height: 5vw;
+      background: url(../../static/waitRoom/setting_btn.png) no-repeat;
+      background-size: 100% 100%;
+    }
   }
 }
 </style>>
