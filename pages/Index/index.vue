@@ -18,6 +18,7 @@ export default {
 	name: 'Index',
   data() {
     return {
+      // 游戏列表
       gameList: [
         {
           name: '谁是卧底',
@@ -31,6 +32,7 @@ export default {
     };
   },
   methods: {
+    // 跳转游戏大厅页面
     goGameHall () {
       uni.navigateTo({
         url: '/pages/gameHall/index'

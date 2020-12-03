@@ -21,10 +21,11 @@ export default {
   },
   data () {
     return {
-      userInfo: null
+      userInfo: null  // 用户信息
     }
   },
   methods: {
+    // 弹出用户信息授权对话框
     userLogin () {
       wx.getUserInfo({
         success: (res) => {

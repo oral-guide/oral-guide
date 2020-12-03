@@ -11,8 +11,10 @@
       </van-col>
     </van-row>
     <!-- 房间列表 -->
+    <van-empty description="暂无房间，快创建一个吧" v-if="!roomList" />
 		<div
       class="hall_room"
+      v-else
       v-for="(item, i) in roomList"
       :key="i"
       @click="goWaitRoom"
@@ -68,6 +70,7 @@ export default {
 	name: 'gameHall',
   data() {
     return {
+      // 房间列表
       roomList: [
         {
           name: '房间1',
@@ -88,18 +91,20 @@ export default {
           max: 8
         }
       ],
-      isAdd: false,
+      isAdd: false, // 创建房间对话框状态
       roomForm: {
         name: '',
         password: '',
         max: '8'
-      }
+      } // 即将创建房间信息
     };
   },
   methods: {
+    // 显示创建房间对话框
     showAddDialog () {
       this.isAdd = true
     },
+    // 隐藏创建房间对话框
     hideAddDialog () {
       this.isAdd = false
       this.roomForm = {
@@ -108,10 +113,12 @@ export default {
         max: '8'
       }
     },
+    // 确认创建房间
     confirmAdd () {
       console.log('创建成功!')
       this.isAdd = false
     },
+    // 跳转等待房间页面
     goWaitRoom () {
       uni.navigateTo({
         url: '/pages/waitRoom/index'

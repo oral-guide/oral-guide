@@ -1,20 +1,22 @@
 <template>
   <!-- 等待房间 -->
   <div class="wait">
-		<img class="wait_setting" src="../../static/waitRoom/setting_btn.png" alt="" v-if="isHost">
     <div class="wait_seat">
-      <div class="wait_seat_l">
-        <waitSeat class="seat_chair" v-for="i in 4" :key="i"></waitSeat>
-      </div>
-      <div class="wait_seat_r">
-        <waitSeat class="seat_chair" v-for="i in 4" :key="i"></waitSeat>
-      </div>
+      <waitSeat :seatInfo="seatInfo[i]" v-for="i in 8" :key="i"></waitSeat>
     </div>
-    <div class="wait_ready">
-      <van-button color="#ff4101" v-if="isHost" :disabled="!isAllReady">开始游戏</van-button>
-      <van-button color="#ff4101" v-else-if="!isReady" @click="toggleReady">准备</van-button>
-      <van-button color="#ff4101" plain v-else @click="toggleReady">取消准备</van-button>
-    </div>
+    <!-- todo: 准备按钮和设置放在中间 -->
+    <!-- <div class="wait_ready">
+      <van-row>
+        <van-col span="6" offset="10">
+          <van-button color="#ff4101" v-if="isHost" :disabled="!isAllReady">开始游戏</van-button>
+          <van-button color="#ff4101" v-else-if="!isReady" @click="toggleReady">准备</van-button>
+          <van-button color="#ff4101" plain v-else @click="toggleReady">取消准备</van-button>
+        </van-col>
+        <van-col span="2" offset="6">
+          <a class="wait_setting" v-if="isHost"></a>
+        </van-col>
+      </van-row>
+    </div> -->
     <div class="wait_chat">聊天区域</div>
 	</div>
 </template>
@@ -28,12 +30,64 @@ export default {
   },
   data() {
     return {
-      isHost: true,
-      isReady: false,
-      isAllReady: false
+      isHost: true, // 是否为房主
+      isReady: false, // 是否已准备
+      isAllReady: false, // 是否房间内所有人已准备
+      // 座位信息
+      seatInfo: [
+        {
+          id: 1,
+          status: 2,
+          avatarUrl: '../static/waitRoom/avatar.jpg',
+          nickName: '珍珠'
+        },
+        {
+          id: 2,
+          status: 2,
+          avatarUrl: '../static/waitRoom/avatar.jpg',
+          nickName: '奶盖'
+        },
+        {
+          id: 3,
+          status: 3,
+          avatarUrl: '../static/waitRoom/avatar.jpg',
+          nickName: '茉莉'
+        },
+        {
+          id: 4,
+          status: 3,
+          avatarUrl: '../static/waitRoom/avatar.jpg',
+          nickName: '花茶'
+        },
+        {
+          id: 5,
+          status: 1,
+          avatarUrl: '',
+          nickName: ''
+        },
+        {
+          id: 6,
+          status: 1,
+          avatarUrl: '',
+          nickName: ''
+        },
+        {
+          id: 7,
+          status: 4,
+          avatarUrl: '',
+          nickName: ''
+        },
+        {
+          id: 8,
+          status: 4,
+          avatarUrl: '',
+          nickName: ''
+        }
+      ]
     };
   },
   methods: {
+    // 准备/取消准备
     toggleReady () {
       console.log(this.isReady)
       this.isReady = !this.isReady
@@ -54,18 +108,22 @@ export default {
     display: block;
     width: 5vw;
     height: 5vw;
-    margin: 0 5vw 10px auto;
+    background: url(../../static/waitRoom/setting_btn.png) no-repeat;
+    background-size: 100% 100%;
   }
 
   &_seat {
+    height: 65vh;
+    padding: 0 15px;
     display: flex;
-    justify-content: space-between;
+    flex-direction: column;
+    flex-wrap: wrap;
   }
 
   &_ready {
     margin-bottom: 10px;
-    display: flex;
-    justify-content: center;
+    // display: flex;
+    // justify-content: center;
   }
 
   &_chat {

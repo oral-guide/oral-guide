@@ -42,7 +42,7 @@ export default {
   name: 'myFriend',
   data() {
     return {
-      searchText: ''
+      searchText: ''  // 搜索框文字
     };
   },
   methods: {}
