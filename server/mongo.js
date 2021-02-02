@@ -1,6 +1,6 @@
 const config = {
     url: "mongodb://localhost:27017",
-    dbName: "oralGuide"
+    dbName: "oralguide"
 }
 const { EventEmitter } = require("events");
 const { MongoClient, ObjectId } = require("mongodb");

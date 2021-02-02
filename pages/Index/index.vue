@@ -1,44 +1,75 @@
 <template>
   <!-- tabbar-首页 -->
   <div class="index">
-		<div
+    <div
       class="index_game"
       v-for="(item, i) in gameList"
       :key="i"
       @click="goGameHall"
     >
-      <img :src="item.imgUrl" alt="">
-      <h1>{{item.name}}</h1>
+      <img :src="item.imgUrl" alt="" />
+      <h1>{{ item.name }}</h1>
     </div>
-	</div>
+
+    <van-dialog
+      :show="showAuth"
+      title="提示"
+      message="当前尚未进行用户授权，请先进行授权~"
+      id="van-dialog"
+      confirm-button-open-type="getUserInfo"
+      @getuserinfo="getUserInfo"
+      lang="zh_CN"
+    >
+    </van-dialog>
+  </div>
 </template>
 
 <script>
+import { mapState } from 'vuex';
 export default {
-	name: 'Index',
+  name: "Index",
   data() {
     return {
+      showAuth: false,
       // 游戏列表
       gameList: [
         {
-          name: '谁是卧底',
-          imgUrl: '../../static/index/spy_logo.png'
+          name: "谁是卧底",
+          imgUrl: "../../static/index/spy_logo.png",
         },
         {
-          name: '情景对话',
-          imgUrl: '../../static/index/dialog_logo.jpg'
-        }
-      ]
+          name: "情景对话",
+          imgUrl: "../../static/index/dialog_logo.jpg",
+        },
+      ],
     };
   },
+  computed: {
+    ...mapState(['userInfo'])
+  },
   methods: {
+    getUserInfo(event) {
+      this.$util.setUserInfo(event.detail.userInfo);
+    },
     // 跳转游戏大厅页面
-    goGameHall () {
+    goGameHall() {
       uni.navigateTo({
-        url: '/pages/gameHall/index'
-      })
+        url: "/pages/gameHall/index", // @TODO 心瑶： 根据游戏类型加上query参数type
+      });
+    },
+  },
+  watch: {
+    userInfo(n) {
+      console.log(n);
+      // @TODO 心瑶：弄一个全屏加载，在这里确认获取到userInfo之后才隐藏加载（因为打开大厅时进行webSocket连接，需要传送userInfo过去
     }
-  }
+  },
+  async onLoad() {
+    let [err, res] = await uni.authorize({ scope: "scope.userInfo" });
+    if (err) {
+      this.showAuth = true;
+    }
+  },
 };
 </script>
 

@@ -5,13 +5,19 @@ Vue.use(Vuex);
 
 const store = new Vuex.Store({
     state: {
-
+        userInfo: null,
+        hall: ''
     },
     getters: {
 
     },
     mutations: {
-
+        setUserInfo(state, userInfo) {
+            state.userInfo = userInfo;
+        },
+        setHall(state, hall) {
+            state.hall = hall;
+        }
     },
     actions: {}
 })

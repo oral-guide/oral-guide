@@ -25,6 +25,7 @@ export default {
     }
   },
   methods: {
+    // @TODO 心瑶：处理一下授权的逻辑。默认打开小程序首页就会进行授权。userInfo从store里面获取即可
     // 弹出用户信息授权对话框
     userLogin () {
       wx.getUserInfo({

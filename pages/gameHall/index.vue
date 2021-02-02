@@ -124,6 +124,12 @@ export default {
         url: '/pages/waitRoom/index'
       })
     }
+  },
+  async onLoad() {
+    // @TODO 心瑶：
+    // 1. 全屏加载
+    // 2. 获取到query里面的type，调用store的setHall
+    // 3. 在这里调用openWebsocket，await完之后再关闭加载
   }
 };
 </script>

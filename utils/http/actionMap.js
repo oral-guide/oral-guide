@@ -11,7 +11,12 @@ function initializeGame() {
     });
 }
 
+function log(reply) {
+    console.log(reply.data.msg);
+}
+
 export default {
     update,
-    initializeGame
+    initializeGame,
+    log
 }
