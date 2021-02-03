@@ -7,11 +7,11 @@ function openWebsocket() {
         url: 'wss://humansean.com:8080'
     });
     uni.onSocketOpen((res) => {
-        // @TODO 连接逻辑
         sendSocketMsg({
             type: "connect",
             data: {
                 userInfo: store.state.userInfo,
+                hall: store.state.hall
             }
         })
     });

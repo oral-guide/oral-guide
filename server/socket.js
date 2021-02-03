@@ -3,16 +3,37 @@ const { mongodb, ObjectId } = require('./mongo.js');
 // WebSocket的逻辑
 
 
-
+let userMap = {};
+let rooms = {
+    spy: {},
+    dialog: {}
+};
+// 用户上线
+function connect(msg, ws) {
+    let { userInfo, hall } = msg.data;
+    ws.userInfo = userInfo;
+    userMap[userInfo._id] = ws;
+    notify(ws, {
+        type: 'log',
+        data: {
+            msg: '打开websocket成功！',
+        }
+    })
+    // updateRooms(0, hall, ws);
+}
+function onClose(msg, ws) {
+    let { _id } = ws.userInfo;
+    delete userMap[_id];
+    console.log('用户下线: ', _id);
+}
 
 // 更新相关
-
-function updateRooms(broadcastType, target) {
+function updateRooms(broadcastType, hall, target) {
     let reply = {
         type: "update",
         key: "rooms",
         data: {
-            rooms
+            rooms: rooms[hall]
         }
     }
     switch (broadcastType) {
@@ -20,7 +41,7 @@ function updateRooms(broadcastType, target) {
             notify(target, reply); // 此时target即单个用户websocket实例
             break;
         case 1:
-            roomBroadcast(target, reply); // 此时target即对应房间
+            roomBroadcast(target, reply); // 此时target即对应房间id
             break;
         case 2:
             broadcast(reply);
@@ -28,12 +49,7 @@ function updateRooms(broadcastType, target) {
     }
 }
 
-// 用户上线
-function connect(msg, ws) {
-    ws.user = msg.data.user;
-    userMap[msg.data.user.name] = ws;
-    updateRooms(0, ws);
-}
+
 
 // 房间相关逻辑
 
@@ -387,8 +403,9 @@ Array.prototype.setSpy = function () {
 }
 
 module.exports = {
-    // 用户上线
+    // 用户上下线
     connect,
+    onClose,
     // 房间相关
     createRoom,
     enterRoom,
