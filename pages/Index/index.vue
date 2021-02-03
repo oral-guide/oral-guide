@@ -32,7 +32,7 @@ export default {
   data() {
     return {
       showAuth: false,
-      isLoaded: false,  // 页面数据是否加载完毕
+      isLoaded: true,  // 页面数据是否加载完毕
       // 游戏列表
       gameList: [
         {
@@ -62,7 +62,6 @@ export default {
   },
   watch: {
     userInfo() {
-      // @TODO 心瑶：全局加载
       this.isLoaded = true
     }
   },

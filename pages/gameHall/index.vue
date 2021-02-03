@@ -40,34 +40,37 @@
         @cancel="hideAddDialog"
       >
         <van-cell-group>
+          <!-- v-mdoel="roomInfo.name"输入时会出现bug -->
           <van-field
-            v-model="roomForm.name"
+            :value="roomInfo.name"
+            @input="handleInput($event, 'name')"
             label="房间名称"
             placeholder="请输入房间名称"
-            :border="false"
             required
           />
           <van-field
-            v-model="roomForm.password"
+            :value="roomInfo.pswd"
+            @input="handleInput($event, 'pswd')"
             label="房间密码"
             placeholder="请输入4-8位密码"
-            :border="false"
             type="password"
           />
           <van-field
-            v-model="roomForm.max"
+            :value="roomInfo.seats"
+            @input="handleInput($event, 'seats')"
             label="房间人数"
             placeholder="介于4-8之间"
-            :border="false"
             required
           />
         </van-cell-group>
       </van-dialog>
+      <van-toast id="van-toast" />
     </van-skeleton>
 	</div>
 </template>
 
 <script>
+import Toast from '../../wxcomponents/vant/toast/toast'
 import { mapMutations } from 'vuex'
 export default {
 	name: 'gameHall',
@@ -96,14 +99,24 @@ export default {
         }
       ],
       isAdd: false, // 创建房间对话框状态
-      roomForm: {
+      // 即将创建房间的信息
+      roomInfo: {
         name: '',
-        password: '',
-        max: '8'
-      } // 即将创建房间信息
+        pswd: '',
+        seats: 8
+      }
     };
   },
   methods: {
+    // 页面onLoad封装
+    async myLoad() {
+      const pages = getCurrentPages()
+      const url = pages[pages.length-1].$page.fullPath
+      const { type } = this.$util.getUrlParams(url)
+      this.setHall(+type)
+      const res = await this.$util.openWebsocket()
+      this.isLoaded = true
+    },
     // 显示创建房间对话框
     showAddDialog () {
       this.isAdd = true
@@ -111,15 +124,41 @@ export default {
     // 隐藏创建房间对话框
     hideAddDialog () {
       this.isAdd = false
-      this.roomForm = {
+      this.roomInfo = {
         name: '',
-        password: '',
-        max: '8'
+        pswd: '',
+        seats: 8
       }
+    },
+    // 创建房间表单input事件
+    handleInput(e, key) {
+      this.roomInfo[key] = e.detail
     },
     // 确认创建房间
     confirmAdd () {
-      console.log('创建成功!')
+      const { name, pswd, seats } = this.roomInfo
+      // 表单验证
+      if (!name.trim()) {
+        this.isAdd = false
+        Toast.fail('请输入房间名称')
+        return
+      }
+      if (pswd && (pswd.length < 4 || pswd.length > 8)) {
+        this.isAdd = false
+        Toast.fail('房间密码介于4-8位之间')
+        return
+      }
+      if (+seats < 4 || +seats > 8) {
+        this.isAdd = false
+        Toast.fail('房间人数介于4-8之间')
+        return
+      }
+      this.$util.createRoom({
+        name,
+        pswd,
+        seats: +seats
+      })
+      Toast.success('创建成功')
       this.isAdd = false
     },
     // 跳转等待房间页面
@@ -130,17 +169,8 @@ export default {
     },
     ...mapMutations(['setHall'])
   },
-  async onLoad() {
-    // @TODO 心瑶：
-    // 1. 全屏加载
-    // 2. 获取到query里面的type，调用store的setHall
-    // 3. 在这里调用openWebsocket，await完之后再关闭加载
-    const pages = getCurrentPages()
-    const url = pages[pages.length-1].$page.fullPath
-    const { type } = this.$util.getUrlParams(url)
-    this.setHall(+type)
-    const res = await this.$util.openWebsocket()
-    this.isLoaded = true
+  onLoad() {
+    this.myLoad()
   }
 };
 </script>

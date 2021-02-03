@@ -2,7 +2,6 @@
   <!-- tabbar-我 -->
   <div class="login">
 		<userPanel></userPanel>
-    <!-- <button class="login_btn" open-type="getUserInfo" @getuserinfo="userLogin">getInfo</button> -->
     <van-cell-group>
       <van-cell title="对战记录" icon="fire-o" is-link />
       <van-cell title="邀请好友" icon="friends-o" />
@@ -23,17 +22,6 @@ export default {
     return {
       userInfo: null  // 用户信息
     }
-  },
-  methods: {
-    // @TODO 心瑶：
-    // 弹出用户信息授权对话框
-    // userLogin () {
-    //   wx.getUserInfo({
-    //     success: (res) => {
-    //       this.userInfo = res.userInfo
-    //     }
-    //   })
-    // },
   }
 };
 </script>
