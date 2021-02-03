@@ -97,9 +97,9 @@ async function getUserInfo() {
 export default {
     openWebsocket,
     sendSocketMsg,
-
     login,
     getStatus,
     setUserInfo,
-    getUserInfo
+    getUserInfo,
+    createRoom
 }

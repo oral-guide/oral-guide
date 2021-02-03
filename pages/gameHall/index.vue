@@ -40,7 +40,6 @@
         @cancel="hideAddDialog"
       >
         <van-cell-group>
-          <!-- v-mdoel="roomInfo.name"输入时会出现bug -->
           <van-field
             :value="roomInfo.name"
             @input="handleInput($event, 'name')"
@@ -113,7 +112,7 @@ export default {
       const pages = getCurrentPages()
       const url = pages[pages.length-1].$page.fullPath
       const { type } = this.$util.getUrlParams(url)
-      this.setHall(+type)
+      this.setHall(type)
       const res = await this.$util.openWebsocket()
       this.isLoaded = true
     },

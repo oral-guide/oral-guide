@@ -32,7 +32,7 @@ export default {
   data() {
     return {
       showAuth: false,
-      isLoaded: true,  // 页面数据是否加载完毕
+      isLoaded: false,  // 页面数据是否加载完毕
       // 游戏列表
       gameList: [
         {
@@ -55,8 +55,9 @@ export default {
     },
     // 跳转游戏大厅页面
     goGameHall(type) {
+      const name = type === 0 ? 'spy' : 'dialog'
       uni.navigateTo({
-        url: `/pages/gameHall/index?type=${type}`
+        url: `/pages/gameHall/index?type=${name}`
       });
     },
   },
