@@ -35,6 +35,18 @@ async function sendSocketMsg(msg) {
         data: JSON.stringify(msg)
     })
 }
+// @TODO 心瑶：封装公共方法createRoom，大致如下
+async function createRoom(params) {
+    return await sendSocketMsg({
+        type: 'createRoom',
+        data: { // 请提供一下四个参数的后三个：名字(String)、密码(String)、座位(Number)
+            roomId: new Date().getTime(),
+            name,
+            pswd,
+            seats
+        }
+    })
+}
 
 // 登录相关
 async function login() {

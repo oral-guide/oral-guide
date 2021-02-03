@@ -11,6 +11,10 @@ let rooms = {
 // 用户上线
 function connect(msg, ws) {
     let { userInfo, hall } = msg.data;
+    
+    ws.state = 'hall';
+    ws.position = hall;
+
     ws.userInfo = userInfo;
     userMap[userInfo._id] = ws;
     notify(ws, {
@@ -19,10 +23,22 @@ function connect(msg, ws) {
             msg: '打开websocket成功！',
         }
     })
-    // updateRooms(0, hall, ws);
+    console.log('用户上线: ', userInfo._id);
+    updateRooms(0, hall, ws);
 }
 function onClose(msg, ws) {
     let { _id } = ws.userInfo;
+    switch (ws.state) {
+        case "hall":
+            // delete waitingPlayers[_id];
+            break;
+        case "room":
+            // delete searchingPlayers[_id];
+            break;
+        case "gaming":
+            // leaveRoom(ws.roomId, _id);
+            break;
+    }
     delete userMap[_id];
     console.log('用户下线: ', _id);
 }
@@ -44,7 +60,7 @@ function updateRooms(broadcastType, hall, target) {
             roomBroadcast(target, reply); // 此时target即对应房间id
             break;
         case 2:
-            broadcast(reply);
+            hallBroadcast(hall, reply);
             break;
     }
 }
@@ -53,7 +69,7 @@ function updateRooms(broadcastType, hall, target) {
 
 // 房间相关逻辑
 
-function createRoom(msg) {
+function createRoom(msg, ws) {
     // msg = {
     //     type: "createRoom",
     //     data: { name, pswd, seats, type }
@@ -63,21 +79,25 @@ function createRoom(msg) {
         name,
         pswd,
         seats,
-        type
     } = msg.data;
     let room = {
         roomId,
         name,
         pswd,
         seats,
-        users: [],
+        players: [],
         msgs: [],
-        type,
         isPlaying: false,
         game: null
     }
-    rooms.push(room);
-    updateRooms(2);
+    rooms[ws.position][roomId] = room;
+    updateRooms(2, ws.position);
+    notify(ws, {
+        type: 'log',
+        data: {
+            msg: `房间“${room.name}”被创建了。`,
+        }
+    })
     console.log(`房间“${room.name}”被创建了。`);
 }
 
@@ -340,7 +360,14 @@ function roomBroadcast(room, reply) {
         }
     })
 }
-
+function hallBroadcast(hall, reply) {
+    Object.keys(userMap).forEach(key => {
+        const ws = userMap[key];
+        if (ws.state === 'hall' && ws.position === hall) {
+            ws.send(JSON.stringify(reply));
+        }
+    })
+}
 function broadcast(reply) {
     Object.keys(userMap).forEach(key => {
         const ws = userMap[key];
