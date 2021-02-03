@@ -116,8 +116,7 @@ const wss = new WebSocket.Server({
     server: httpsServer
 });
 
-const userMap = {};
-let rooms = {};
+
 wss.on("connection", ws => {
     ws.on("message", msg => {
         // 消息分发处理中心
