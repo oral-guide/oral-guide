@@ -77,9 +77,9 @@ export default {
   font-size: 14px;
   color: #333;
   line-height: 24px;
-  position: fixed;
-  left: 0;
-  bottom: 0;
+  // position: fixed;
+  // left: 0;
+  // bottom: 0;
 
   &_content {
     width: 94vw;

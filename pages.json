@@ -7,15 +7,15 @@
 			}
 		},
 		{
-			"path": "pages/waitRoom/index",
-			"style": {
-				"navigationBarTitleText": ""
-			}
-		},
-		{
 			"path": "pages/gameHall/index",
 			"style": {
 				"navigationBarTitleText": "大厅"
+			}
+		},
+		{
+			"path": "pages/waitRoom/index",
+			"style": {
+				"navigationBarTitleText": ""
 			}
 		},
 		{

@@ -10,7 +10,7 @@
       <van-button color="#ff4101" v-if="isHost" :disabled="!isAllReady">开始游戏</van-button>
       <van-button color="#ff4101" v-else-if="!isReady" @click="toggleReady">准备</van-button>
       <van-button color="#ff4101" plain v-else @click="toggleReady">取消准备</van-button>
-      <a class="wait_ready_setting" v-if="isHost"></a>
+      <!-- <a class="wait_ready_setting" v-if="isHost"></a> -->
     </div>
     <chatArea></chatArea>
 	</div>
@@ -115,19 +115,19 @@ export default {
     margin-bottom: 10px;
     display: flex;
     justify-content: center;
-    position: relative;
+    // position: relative;
 
-    &_setting {
-      display: block;
-      position: absolute;
-      right: 20px;
-      bottom: 50%;
-      transform: translateY(50%);
-      width: 5vw;
-      height: 5vw;
-      background: url(../../static/waitRoom/setting_btn.png) no-repeat;
-      background-size: 100% 100%;
-    }
+    // &_setting {
+    //   display: block;
+    //   position: absolute;
+    //   right: 20px;
+    //   bottom: 50%;
+    //   transform: translateY(50%);
+    //   width: 5vw;
+    //   height: 5vw;
+    //   background: url(../../static/waitRoom/setting_btn.png) no-repeat;
+    //   background-size: 100% 100%;
+    // }
   }
 }
 </style>>
