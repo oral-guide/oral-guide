@@ -1,16 +1,17 @@
 <template>
   <!-- tabbar-首页 -->
   <div class="index">
-    <div
-      class="index_game"
-      v-for="(item, i) in gameList"
-      :key="i"
-      @click="goGameHall"
-    >
-      <img :src="item.imgUrl" alt="" />
-      <h1>{{ item.name }}</h1>
-    </div>
-
+    <van-skeleton title row="3"	:loading="!isLoaded">
+      <div
+        class="index_game"
+        v-for="(item, i) in gameList"
+        :key="i"
+        @click="goGameHall(i)"
+      >
+        <img :src="item.imgUrl" alt="" />
+        <h1>{{ item.name }}</h1>
+      </div>
+    </van-skeleton>
     <van-dialog
       :show="showAuth"
       title="提示"
@@ -31,6 +32,7 @@ export default {
   data() {
     return {
       showAuth: false,
+      isLoaded: false,  // 页面数据是否加载完毕
       // 游戏列表
       gameList: [
         {
@@ -52,16 +54,16 @@ export default {
       this.$util.setUserInfo(event.detail.userInfo);
     },
     // 跳转游戏大厅页面
-    goGameHall() {
+    goGameHall(type) {
       uni.navigateTo({
-        url: "/pages/gameHall/index", // @TODO 心瑶： 根据游戏类型加上query参数type
+        url: `/pages/gameHall/index?type=${type}`
       });
     },
   },
   watch: {
-    userInfo(n) {
-      console.log(n);
-      // @TODO 心瑶：弄一个全屏加载，在这里确认获取到userInfo之后才隐藏加载（因为打开大厅时进行webSocket连接，需要传送userInfo过去
+    userInfo() {
+      // @TODO 心瑶：全局加载
+      this.isLoaded = true
     }
   },
   async onLoad() {

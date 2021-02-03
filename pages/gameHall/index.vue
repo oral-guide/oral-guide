@@ -1,75 +1,79 @@
 <template>
   <!-- 游戏大厅 -->
   <div class="hall">
-    <!-- 游戏大厅按钮组 -->
-    <van-row>
-      <van-col span="7" offset="6">
-        <van-button color="#ff4101" @click="showAddDialog">创建房间</van-button>
-      </van-col>
-      <van-col span="7">
-        <van-button color="#ff4101" plain>快速加入</van-button>
-      </van-col>
-    </van-row>
-    <!-- 房间列表 -->
-    <van-empty description="暂无房间，快创建一个吧" v-if="!roomList" />
-		<div
-      class="hall_room"
-      v-else
-      v-for="(item, i) in roomList"
-      :key="i"
-      @click="goWaitRoom"
-    >
-      <div class="hall_room_l">
-        <img src="../../static/gameHall/room_logo.png" alt="">
-        <h1>{{item.name}}</h1>
+    <van-skeleton title row="3"	:loading="!isLoaded">
+      <!-- 游戏大厅按钮组 -->
+      <van-row>
+        <van-col span="7" offset="6">
+          <van-button color="#ff4101" @click="showAddDialog">创建房间</van-button>
+        </van-col>
+        <van-col span="7">
+          <van-button color="#ff4101" plain>快速加入</van-button>
+        </van-col>
+      </van-row>
+      <!-- 房间列表 -->
+      <van-empty description="暂无房间，快创建一个吧" v-if="!roomList" />
+      <div
+        class="hall_room"
+        v-else
+        v-for="(item, i) in roomList"
+        :key="i"
+        @click="goWaitRoom"
+      >
+        <div class="hall_room_l">
+          <img src="../../static/gameHall/room_logo.png" alt="">
+          <h1>{{item.name}}</h1>
+        </div>
+        <div class="hall_room_r">
+          <p :class="item.isStart?'start':''">{{item.isStart?'已开始':'准备中'}}</p>
+          <p>{{`${item.cur} / ${item.max}`}}</p>
+        </div>
       </div>
-      <div class="hall_room_r">
-        <p :class="item.isStart?'start':''">{{item.isStart?'已开始':'准备中'}}</p>
-        <p>{{`${item.cur} / ${item.max}`}}</p>
-      </div>
-    </div>
-    <!-- 创建房间对话框 -->
-    <van-dialog
-      use-slot
-      title="创建房间"
-      :show="isAdd"
-      theme="round-button"
-      show-cancel-button
-      @confirm="confirmAdd"
-      @cancel="hideAddDialog"
-    >
-      <van-cell-group>
-        <van-field
-          v-model="roomForm.name"
-          label="房间名称"
-          placeholder="请输入房间名称"
-          :border="false"
-          required
-        />
-        <van-field
-          v-model="roomForm.password"
-          label="房间密码"
-          placeholder="请输入4-8位密码"
-          :border="false"
-          type="password"
-        />
-        <van-field
-          v-model="roomForm.max"
-          label="房间人数"
-          placeholder="介于4-8之间"
-          :border="false"
-          required
-        />
-      </van-cell-group>
-    </van-dialog>
+      <!-- 创建房间对话框 -->
+      <van-dialog
+        use-slot
+        title="创建房间"
+        :show="isAdd"
+        theme="round-button"
+        show-cancel-button
+        @confirm="confirmAdd"
+        @cancel="hideAddDialog"
+      >
+        <van-cell-group>
+          <van-field
+            v-model="roomForm.name"
+            label="房间名称"
+            placeholder="请输入房间名称"
+            :border="false"
+            required
+          />
+          <van-field
+            v-model="roomForm.password"
+            label="房间密码"
+            placeholder="请输入4-8位密码"
+            :border="false"
+            type="password"
+          />
+          <van-field
+            v-model="roomForm.max"
+            label="房间人数"
+            placeholder="介于4-8之间"
+            :border="false"
+            required
+          />
+        </van-cell-group>
+      </van-dialog>
+    </van-skeleton>
 	</div>
 </template>
 
 <script>
+import { mapMutations } from 'vuex'
 export default {
 	name: 'gameHall',
   data() {
     return {
+      isLoaded: false,  // 页面数据是否加载完毕
       // 房间列表
       roomList: [
         {
@@ -123,13 +127,20 @@ export default {
       uni.navigateTo({
         url: '/pages/waitRoom/index'
       })
-    }
+    },
+    ...mapMutations(['setHall'])
   },
   async onLoad() {
     // @TODO 心瑶：
     // 1. 全屏加载
     // 2. 获取到query里面的type，调用store的setHall
     // 3. 在这里调用openWebsocket，await完之后再关闭加载
+    const pages = getCurrentPages()
+    const url = pages[pages.length-1].$page.fullPath
+    const { type } = this.$util.getUrlParams(url)
+    this.setHall(+type)
+    const res = await this.$util.openWebsocket()
+    this.isLoaded = true
   }
 };
 </script>

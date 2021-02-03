@@ -1,9 +1,9 @@
 <template>
   <!-- tabbar-我 -->
   <div class="login">
-		<userPanel :userInfo="userInfo"></userPanel>
-    <button class="login_btn" open-type="getUserInfo" @getuserinfo="userLogin">getInfo</button>
-    <van-cell-group v-if="userInfo">
+		<userPanel></userPanel>
+    <!-- <button class="login_btn" open-type="getUserInfo" @getuserinfo="userLogin">getInfo</button> -->
+    <van-cell-group>
       <van-cell title="对战记录" icon="fire-o" is-link />
       <van-cell title="邀请好友" icon="friends-o" />
       <van-cell title="意见反馈" icon="edit" />
@@ -25,15 +25,15 @@ export default {
     }
   },
   methods: {
-    // @TODO 心瑶：处理一下授权的逻辑。默认打开小程序首页就会进行授权。userInfo从store里面获取即可
+    // @TODO 心瑶：
     // 弹出用户信息授权对话框
-    userLogin () {
-      wx.getUserInfo({
-        success: (res) => {
-          this.userInfo = res.userInfo
-        }
-      })
-    },
+    // userLogin () {
+    //   wx.getUserInfo({
+    //     success: (res) => {
+    //       this.userInfo = res.userInfo
+    //     }
+    //   })
+    // },
   }
 };
 </script>

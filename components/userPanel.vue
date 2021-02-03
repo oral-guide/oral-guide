@@ -15,9 +15,13 @@
 </template>
 
 <script>
+import { mapState } from 'vuex'
 export default {
   name: 'userPanel',
-  props: ['userInfo']
+  // props: ['userInfo']
+    computed: {
+      ...mapState(['userInfo'])
+    }
 }
 </script>
 

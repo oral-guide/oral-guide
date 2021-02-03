@@ -60,7 +60,9 @@
 			"van-cell-group": "/wxcomponents/vant/cell-group/index",
 			"van-search": "/wxcomponents/vant/search/index",
 			"van-notify": "/wxcomponents/vant/notify/index",
-			"van-empty": "/wxcomponents/vant/empty/index"
+			"van-empty": "/wxcomponents/vant/empty/index",
+			"van-loading": "/wxcomponents/vant/loading/index",
+			"van-skeleton": "/wxcomponents/vant/skeleton/index"
 		}
 	},
 	"tabBar": {

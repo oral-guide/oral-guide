@@ -72,10 +72,14 @@ export default {
 <style lang="scss" scoped>
 .chat {
   width: 100vw;
+  height: 60vw;
   background: #fff;
   font-size: 14px;
   color: #333;
   line-height: 24px;
+  position: fixed;
+  left: 0;
+  bottom: 0;
 
   &_content {
     width: 94vw;
@@ -94,7 +98,7 @@ export default {
   ::v-deep .van-search {
     width: 100vw;
     height: 50px;
-    position: fixed;
+    position: absolute;
     left: 0;
     bottom: 0;
   }
