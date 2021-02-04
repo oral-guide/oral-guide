@@ -91,6 +91,10 @@ export default {
       this.isReady = !this.isReady
       console.log(this.isReady)
     }
+  },
+  onUnload() {
+    console.log('unload')
+    this.$util.leaveRoom()
   }
 };
 </script>

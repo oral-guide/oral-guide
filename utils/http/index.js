@@ -35,20 +35,36 @@ async function sendSocketMsg(msg) {
         data: JSON.stringify(msg)
     })
 }
-// @TODO 心瑶：封装公共方法createRoom，大致如下
+// 创建房间
 async function createRoom(params) {
-    const { name, pswd, seats } = params
+    const { roomId, name, pswd, seats } = params
     return await sendSocketMsg({
         type: 'createRoom',
         data: { // 请提供一下四个参数的后三个：名字(String)、密码(String)、座位(Number)
-            roomId: new Date().getTime(),
+            roomId,
             name,
             pswd,
             seats
         }
     })
 }
-
+// 进入房间
+async function enterRoom(params) {
+    const { roomId, isOwner } = params
+    return await sendSocketMsg({
+        type: 'enterRoom',
+        data: { 
+            roomId
+        },
+        isOwner
+    })
+}
+// 退出房间
+async function leaveRoom() {
+    return await sendSocketMsg({
+        type: 'leaveRoom'
+    })
+}
 // 登录相关
 async function login() {
     let [err, { code }] = await uni.login({ provider: 'weixin' });
@@ -101,5 +117,7 @@ export default {
     getStatus,
     setUserInfo,
     getUserInfo,
-    createRoom
+    createRoom,
+    enterRoom,
+    leaveRoom
 }
