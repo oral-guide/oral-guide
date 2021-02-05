@@ -1,16 +1,15 @@
 <template>
   <!-- 等待房间 -->
-  <div class="wait">
+  <div class="wait" v-if="room.players">
     <!-- 座位区 -->
     <div class="wait_seat">
-      <waitSeat :seatInfo="seatInfo[i]" v-for="i in 8" :key="i"></waitSeat>
+      <waitSeat :userInfo="players[i]" v-for="i in 8" :key="i"></waitSeat>
     </div>
     <!-- 准备/房间设置按钮 -->
     <div class="wait_ready">
-      <van-button color="#ff4101" v-if="isHost" :disabled="!isAllReady">开始游戏</van-button>
+      <van-button color="#ff4101" v-if="isOwner" :disabled="!isAllReady" @click="startGame">开始游戏</van-button>
       <van-button color="#ff4101" v-else-if="!isReady" @click="toggleReady">准备</van-button>
       <van-button color="#ff4101" plain v-else @click="toggleReady">取消准备</van-button>
-      <!-- <a class="wait_ready_setting" v-if="isHost"></a> -->
     </div>
     <chatArea></chatArea>
 	</div>
@@ -19,7 +18,7 @@
 <script>
 import waitSeat from '../../components/waitSeat'
 import chatArea from '../../components/chatArea'
-
+import { mapState } from 'vuex'
 export default {
   name: 'waitRoom',
   components: {
@@ -28,8 +27,6 @@ export default {
   },
   data() {
     return {
-      isHost: true, // 是否为房主
-      isReady: false, // 是否已准备
       isAllReady: false, // 是否房间内所有人已准备
       // 座位信息
       seatInfo: [
@@ -81,19 +78,36 @@ export default {
           avatarUrl: '',
           nickName: ''
         }
-      ]
+      ],
+      // 玩家信息
+      players: null
     };
+  },
+  computed: {
+    ...mapState(['room', 'isOwner', 'isReady'])
+  },
+  watch: {
+    room() {
+      this.players = this.room.players
+      this.isAllReady = this.players.every(item => {
+        if (item.isOwner) {
+          return true
+        }
+        return item.isReady
+      })
+    }
   },
   methods: {
     // 准备/取消准备
     toggleReady () {
-      console.log(this.isReady)
-      this.isReady = !this.isReady
-      console.log(this.isReady)
+      this.$util.toggleReady(this.isReady)
+    },
+    // 开始游戏
+    startGame () {
+      this.$util.initializeGame()
     }
   },
   onUnload() {
-    console.log('unload')
     this.$util.leaveRoom()
   }
 };
@@ -119,19 +133,6 @@ export default {
     margin-bottom: 10px;
     display: flex;
     justify-content: center;
-    // position: relative;
-
-    // &_setting {
-    //   display: block;
-    //   position: absolute;
-    //   right: 20px;
-    //   bottom: 50%;
-    //   transform: translateY(50%);
-    //   width: 5vw;
-    //   height: 5vw;
-    //   background: url(../../static/waitRoom/setting_btn.png) no-repeat;
-    //   background-size: 100% 100%;
-    // }
   }
 }
 </style>>

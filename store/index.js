@@ -8,10 +8,15 @@ const store = new Vuex.Store({
         userInfo: null, // 用户信息
         hall: '',   // 游戏类型
         rooms: [],  // 所有房间
-        isOwner: true,   // 用户是否为房主
-        roomId: 0
+        room: null, // 当前房间
+        roomId: 0,   // 当前房间id
+        isOwner: false,   // 用户是否为当前房间房主
+        isReady: false, // 用户是否准备
     },
     getters: {
+        // curRoom(state) {
+        //     return state.rooms[state.roomId]
+        // }
     },
     mutations: {
         setUserInfo(state, userInfo) {
@@ -22,6 +27,9 @@ const store = new Vuex.Store({
         },
         setRoomId(state, roomId) {
             state.roomId = roomId
+        },
+        setIsOwner(state, isOwner) {
+            state.isOwner = isOwner
         }
     },
     actions: {}

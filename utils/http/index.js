@@ -54,15 +54,30 @@ async function enterRoom(params) {
     return await sendSocketMsg({
         type: 'enterRoom',
         data: { 
-            roomId
-        },
-        isOwner
+            roomId,
+            isOwner
+        }
     })
 }
 // 退出房间
 async function leaveRoom() {
     return await sendSocketMsg({
         type: 'leaveRoom'
+    })
+}
+// 准备/取消准备
+async function toggleReady(isReady) {
+    return await sendSocketMsg({
+        type: 'toggleReady',
+        data: {
+            isReady
+        }
+    })
+}
+// 开始游戏
+async function initializeGame() {
+    return await sendSocketMsg({
+        type: 'initializeGame'
     })
 }
 // 登录相关
@@ -119,5 +134,7 @@ export default {
     getUserInfo,
     createRoom,
     enterRoom,
-    leaveRoom
+    leaveRoom,
+    toggleReady,
+    initializeGame
 }
