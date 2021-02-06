@@ -3,8 +3,7 @@
   <div class="seat">
     <div class="seat_avatar">
       <img v-if="userInfo" :src="userInfo.avatarUrl" alt="">
-      <!-- todo1: 全屏加载——userInfo加载完毕后再渲染页面 -->
-      <!-- todo2: 根据userInfo.isOwner给头像添加房主logo -->
+      <img v-if="userInfo && userInfo.isOwner" class="owner" src="../static/waitRoom/owner.png" alt="">
       <img v-if="userInfo && userInfo.isReady" class="ready" src="../static/waitRoom/ready.png" alt="">
       <!-- <img v-else-if="userInfo.status===4" class="ban" src="../static/waitRoom/lock.png" alt=""> -->
     </div>
@@ -13,13 +12,6 @@
 </template>
 
 <script>
-// 座位状态
-// const status = {
-//   1: 'empty',
-//   2: 'notReady',
-//   3: 'ready',
-//   4: 'ban'
-// }
 export default {
   name: 'waitSeat',
   props: ['userInfo']
@@ -56,10 +48,17 @@ export default {
         height: 4vw;
       }
 
-      &.ban {
-        width: 8vw;
-        height: 8vw;
+      &.owner {
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        width: 6vw;
+        height: 6vw;
       }
+      // &.ban {
+      //   width: 8vw;
+      //   height: 8vw;
+      // }
     }
   }
 

@@ -1,17 +1,20 @@
 <template>
   <!-- 等待房间 -->
-  <div class="wait" v-if="room.players">
-    <!-- 座位区 -->
-    <div class="wait_seat">
-      <waitSeat :userInfo="players[i]" v-for="i in 8" :key="i"></waitSeat>
-    </div>
-    <!-- 准备/房间设置按钮 -->
-    <div class="wait_ready">
-      <van-button color="#ff4101" v-if="isOwner" :disabled="!isAllReady" @click="startGame">开始游戏</van-button>
-      <van-button color="#ff4101" v-else-if="!isReady" @click="toggleReady">准备</van-button>
-      <van-button color="#ff4101" plain v-else @click="toggleReady">取消准备</van-button>
-    </div>
-    <chatArea></chatArea>
+  <div class="wait">
+    <van-skeleton title row="3"	:loading="room.players.length===0">
+      <!-- 座位区 -->
+      <div class="wait_seat">
+        <waitSeat :userInfo="room.players[i]" v-for="i in 8" :key="i"></waitSeat>
+      </div>
+      <!-- 准备/取消准备/开始游戏按钮 -->
+      <div class="wait_ready">
+        <van-button color="#ff4101" v-if="isOwner" :disabled="!isAllReady" @click="startGame">开始游戏</van-button>
+        <van-button color="#ff4101" v-else-if="!isReady" @click="toggleReady">准备</van-button>
+        <van-button color="#ff4101" plain v-else @click="toggleReady">取消准备</van-button>
+      </div>
+      <!-- 聊天框 -->
+      <chatArea></chatArea>
+    </van-skeleton>
 	</div>
 </template>
 
@@ -28,68 +31,14 @@ export default {
   data() {
     return {
       isAllReady: false, // 是否房间内所有人已准备
-      // 座位信息
-      seatInfo: [
-        {
-          id: 1,
-          status: 2,
-          avatarUrl: '../static/waitRoom/avatar.jpg',
-          nickName: '珍珠'
-        },
-        {
-          id: 2,
-          status: 2,
-          avatarUrl: '../static/waitRoom/avatar.jpg',
-          nickName: '奶盖'
-        },
-        {
-          id: 3,
-          status: 3,
-          avatarUrl: '../static/waitRoom/avatar.jpg',
-          nickName: '茉莉'
-        },
-        {
-          id: 4,
-          status: 3,
-          avatarUrl: '../static/waitRoom/avatar.jpg',
-          nickName: '花茶'
-        },
-        {
-          id: 5,
-          status: 1,
-          avatarUrl: '',
-          nickName: ''
-        },
-        {
-          id: 6,
-          status: 1,
-          avatarUrl: '',
-          nickName: ''
-        },
-        {
-          id: 7,
-          status: 4,
-          avatarUrl: '',
-          nickName: ''
-        },
-        {
-          id: 8,
-          status: 4,
-          avatarUrl: '',
-          nickName: ''
-        }
-      ],
-      // 玩家信息
-      players: null
-    };
+    }
   },
   computed: {
     ...mapState(['room', 'isOwner', 'isReady'])
   },
   watch: {
     room() {
-      this.players = this.room.players
-      this.isAllReady = this.players.every(item => {
+      this.isAllReady = this.room.players.every(item => {
         if (item.isOwner) {
           return true
         }
