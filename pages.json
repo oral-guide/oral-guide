@@ -29,6 +29,12 @@
 			"style": {
 				"navigationBarTitleText": "我"
 			}
+		},
+		{
+			"path": "pages/Spy/index",
+			"style": {
+				"navigationBarTitleText": "谁是卧底"
+			}
 		}
 	],
 	"globalStyle": {

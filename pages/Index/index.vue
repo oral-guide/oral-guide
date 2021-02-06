@@ -55,14 +55,14 @@ export default {
     },
     // 跳转游戏大厅页面
     goGameHall(type) {
+      const name = type === 0 ? 'spy' : 'dialog'
       uni.navigateTo({
-        url: `/pages/gameHall/index?type=${type}`
+        url: `/pages/gameHall/index?type=${name}`
       });
     },
   },
   watch: {
     userInfo() {
-      // @TODO 心瑶：全局加载
       this.isLoaded = true
     }
   },

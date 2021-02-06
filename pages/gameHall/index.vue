@@ -2,15 +2,8 @@
   <!-- 游戏大厅 -->
   <div class="hall">
     <van-skeleton title row="3"	:loading="!isLoaded">
-      <!-- 游戏大厅按钮组 -->
-      <van-row>
-        <van-col span="7" offset="6">
-          <van-button color="#ff4101" @click="showAddDialog">创建房间</van-button>
-        </van-col>
-        <van-col span="7">
-          <van-button color="#ff4101" plain>快速加入</van-button>
-        </van-col>
-      </van-row>
+      <!-- 创建房间 -->
+      <van-button color="#ff4101" block @click="showAddDialog">创建房间</van-button>
       <!-- 房间列表 -->
       <van-empty description="暂无房间，快创建一个吧" v-if="!roomList" />
       <div
@@ -18,15 +11,16 @@
         v-else
         v-for="(item, i) in roomList"
         :key="i"
-        @click="goWaitRoom"
+        @click="beforeEnterRoom(item)"
       >
         <div class="hall_room_l">
           <img src="../../static/gameHall/room_logo.png" alt="">
           <h1>{{item.name}}</h1>
+          <img src="../../static/gameHall/lock_logo.png" class="lock" v-if="item.pswd.length>0" alt="">
         </div>
         <div class="hall_room_r">
-          <p :class="item.isStart?'start':''">{{item.isStart?'已开始':'准备中'}}</p>
-          <p>{{`${item.cur} / ${item.max}`}}</p>
+          <p :class="item.isPlaying?'start':''">{{item.isPlaying?'已开始':'准备中'}}</p>
+          <p>{{`${item.players.length} / ${item.seats}`}}</p>
         </div>
       </div>
       <!-- 创建房间对话框 -->
@@ -41,69 +35,97 @@
       >
         <van-cell-group>
           <van-field
-            v-model="roomForm.name"
+            :value="roomInfo.name"
+            @input="handleInput($event, 'name')"
             label="房间名称"
             placeholder="请输入房间名称"
-            :border="false"
             required
           />
           <van-field
-            v-model="roomForm.password"
+            :value="roomInfo.pswd"
+            @input="handleInput($event, 'pswd')"
             label="房间密码"
             placeholder="请输入4-8位密码"
-            :border="false"
             type="password"
           />
           <van-field
-            v-model="roomForm.max"
+            :value="roomInfo.seats"
+            @input="handleInput($event, 'seats')"
             label="房间人数"
             placeholder="介于4-8之间"
-            :border="false"
             required
           />
         </van-cell-group>
       </van-dialog>
+      <!-- 加入房间对话框（有密码） -->
+      <van-dialog
+        use-slot
+        title="加入房间"
+        :show="isEnter"
+        theme="round-button"
+        show-cancel-button
+        @confirm="confirmEnter"
+        @cancel="hideEnterDialog"
+      >
+        <van-cell-group>
+          <van-field
+            :value="myPswd"
+            @input="handlePswdInput"
+            label="房间密码"
+            placeholder="请输入房间密码"
+            type="password"
+          />
+        </van-cell-group>
+      </van-dialog>
+      <van-toast id="van-toast" />
     </van-skeleton>
 	</div>
 </template>
 
 <script>
-import { mapMutations } from 'vuex'
+import Toast from '../../wxcomponents/vant/toast/toast'
+import { mapMutations, mapState } from 'vuex'
 export default {
 	name: 'gameHall',
   data() {
     return {
       isLoaded: false,  // 页面数据是否加载完毕
+      gameType: '', // 当前游戏类型
       // 房间列表
-      roomList: [
-        {
-          name: '房间1',
-          isStart: false,
-          cur: 1,
-          max: 4
-        },
-        {
-          name: '房间2',
-          isStart: false,
-          cur: 2,
-          max: 6
-        },
-        {
-          name: '房间3',
-          isStart: true,
-          cur: 8,
-          max: 8
-        }
-      ],
+      roomList: null,
       isAdd: false, // 创建房间对话框状态
-      roomForm: {
+      isEnter: false,  // 加入房间对话框状态
+      // 即将创建房间的信息
+      roomInfo: {
         name: '',
-        password: '',
-        max: '8'
-      } // 即将创建房间信息
+        pswd: '',
+        seats: 8
+      },
+      selectedId: '', // 用户即将进入的房间ID
+      myPswd: '', // 用户键入的房间密码
+      roomPswd: ''  // 所选房间的正确密码
     };
   },
+  computed: {
+    ...mapState(['rooms'])
+  },
+  watch: {
+    rooms() {
+      this.roomList = this.rooms
+    }
+  },
   methods: {
+    ...mapMutations(['setHall', 'setRoomId', 'setIsOwner']),
+    // 页面onLoad封装
+    async myLoad() {
+      // 获取URL中的参数并开启WS
+      const pages = getCurrentPages()
+      const url = pages[pages.length-1].$page.fullPath
+      this.gameType = this.$util.getUrlParams(url).type
+      this.setHall(this.gameType)
+      const res = await this.$util.openWebsocket()
+      this.isLoaded = true
+    },
     // 显示创建房间对话框
     showAddDialog () {
       this.isAdd = true
@@ -111,81 +133,93 @@ export default {
     // 隐藏创建房间对话框
     hideAddDialog () {
       this.isAdd = false
-      this.roomForm = {
+      this.roomInfo = {
         name: '',
-        password: '',
-        max: '8'
+        pswd: '',
+        seats: 8
       }
+    },
+    // 隐藏加入房间对话框
+    hideEnterDialog () {
+      this.isEnter = false
+      this.myPswd = ''
+    },
+    // 创建房间表单input事件
+    handleInput(e, key) {
+      this.roomInfo[key] = e.detail
+    },
+    // 加入房间表单input事件
+    handlePswdInput(e) {
+      this.myPswd = e.detail
     },
     // 确认创建房间
     confirmAdd () {
-      console.log('创建成功!')
-      this.isAdd = false
+      const { name, pswd, seats } = this.roomInfo
+      // 表单验证
+      if (!name.trim()) {
+        this.isAdd = false
+        Toast.fail('请输入房间名称')
+        return
+      }
+      if (pswd && (pswd.length < 4 || pswd.length > 8)) {
+        this.isAdd = false
+        Toast.fail('房间密码介于4-8位之间')
+        return
+      }
+      if (+seats < 4 || +seats > 8) {
+        this.isAdd = false
+        Toast.fail('房间人数介于4-8之间')
+        return
+      }
+      const roomId = new Date().getTime()
+      this.$util.createRoom({
+        roomId,
+        name,
+        pswd,
+        seats: +seats
+      })
+      this.setIsOwner(true) // 给用户房主身份
+      this.setRoomId(roomId)  // 保存房间ID
+      this.hideAddDialog()
+      this.goWaitRoom(roomId, true)
     },
-    // 跳转等待房间页面
-    goWaitRoom () {
+    // 进入等待房间页面
+    goWaitRoom(roomId, isOwner = false) {
+      this.$util.enterRoom({
+        roomId,
+        isOwner
+      })
       uni.navigateTo({
         url: '/pages/waitRoom/index'
       })
     },
-    ...mapMutations(['setHall'])
+    // 进入房间之前的判断
+    beforeEnterRoom(room) {
+      this.selectedId = room.roomId
+      if (room.pswd.length > 0) { // 房间设置了密码
+        this.roomPswd = room.pswd
+        this.isEnter = true
+      } else {
+        this.goWaitRoom(this.selectedId)
+      }
+    },
+    // 判断输入密码是否正确
+    confirmEnter() {
+      if (this.myPswd === this.roomPswd) {
+        this.goWaitRoom(this.selectedId)
+      } else {
+        this.isEnter = false
+        Toast.fail('密码错误，请再试一遍')
+      }
+      this.hideEnterDialog()
+    }
   },
-  async onLoad() {
-    // @TODO 心瑶：
-    // 1. 全屏加载
-    // 2. 获取到query里面的type，调用store的setHall
-    // 3. 在这里调用openWebsocket，await完之后再关闭加载
-    const pages = getCurrentPages()
-    const url = pages[pages.length-1].$page.fullPath
-    const { type } = this.$util.getUrlParams(url)
-    this.setHall(+type)
-    const res = await this.$util.openWebsocket()
-    this.isLoaded = true
+  onLoad() {
+    this.myLoad()
   }
 };
 </script>
 
 <style lang="scss" scoped>
-.hall {
-  height: 100vh;
-  padding-top: 20px;
-  background-color: #f8f8f8;
-
-  &_room {
-    width: 80vw;
-    height: 10vh;
-    padding: 0 30px;
-    margin: 20px auto 20px auto;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background-color: #fff;
-    box-shadow: 0 4px 10px #eee;
-
-    &_l {
-      display: flex;
-
-      img {
-        display: block;
-        width: 6vw;
-        height: 6vw;
-        margin-right: 10px;
-      }
-
-      h1 {
-        font-size: 16px;
-      }
-    }
-
-    &_r {
-      font-size: 12px;
-      text-align: center;
-      line-height: 20px;
-
-      .start {
-        color: #ff4101;
-      }
-    }
-  }
-}
+@import './index.scss';
 </style>>

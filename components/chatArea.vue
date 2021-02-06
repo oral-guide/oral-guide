@@ -1,6 +1,5 @@
 <template>
 <!-- 等待房间的聊天区域 -->
-<!-- todo: 消息展示区高度自适应？搜索框fixed=>absolute -->
   <div class="chat">
     <!-- 消息展示 -->
     <scroll-view class="chat_content" :scroll-y="true">
