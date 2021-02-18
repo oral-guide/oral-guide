@@ -276,17 +276,37 @@ function toggleReady(msg, ws) {
 }
 
 // 消息相关
-function sendRoomMessage(msg) {
+function sendRoomMessage(msg, ws) {
     // msg = {
     //     type: "sendRoomMessage",
     //     data: {
     //         msg: { userId, url }
     //     }
     // }
-    let room = rooms.find(room => room.roomId === msg.roomId);
-    // key可以是msgs等
-    room[msg.key] = msg.data[msg.key];
-    updateRooms(1, '', room);
+    let {
+        roomId,
+        hallType
+    } = ws;
+    let room = rooms[hallType][roomId];
+    roomBroadcast(room, {
+        type: 'updateArray',
+        key: 'roomMsgs',
+        data: {
+            roomMsgs: msg.data
+        }
+    })
+    roomBroadcast(room, {
+        type: 'log',
+        data: {
+            msg: '收到聊天消息：'
+        }
+    })
+    roomBroadcast(room, {
+        type: 'log',
+        data: {
+            msg: msg.data
+        }
+    })
 }
 
 function initializeGame(msg, ws) {
@@ -534,7 +554,7 @@ module.exports = {
     toggleReady,
     initializeGame,
     // 消息相关
-    updateRoom,
+    sendRoomMessage,
     updateGame,
     // 投票相关
     vote
