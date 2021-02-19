@@ -13,28 +13,35 @@
         <van-button color="#ff4101" plain v-else @click="toggleReady">取消准备</van-button>
       </div>
       <!-- 聊天框 -->
-      <chatArea></chatArea>
+      <!-- <chatArea></chatArea> -->
+      <!-- 发送语音 -->
+      <div class="wait_speak">
+        <van-button type="default" block @touchstart="startRecord" @touchend="stopRecord">按住说话</van-button>
+      </div>
     </van-skeleton>
 	</div>
 </template>
 
 <script>
 import waitSeat from '../../components/waitSeat'
-import chatArea from '../../components/chatArea'
+// import chatArea from '../../components/chatArea'
 import { mapState } from 'vuex'
+const recorderManager = uni.getRecorderManager()
+
 export default {
   name: 'waitRoom',
   components: {
-    waitSeat,
-    chatArea
+    waitSeat
   },
   data() {
     return {
+      timer: null,  // 计时器
       isAllReady: false, // 是否房间内所有人已准备
+      isLong: false // 录音时长是否大于500ms
     }
   },
   computed: {
-    ...mapState(['room', 'isOwner', 'isReady'])
+    ...mapState(['room', 'isOwner', 'isReady', 'userInfo', 'roomMsgs'])
   },
   watch: {
     room() {
@@ -44,6 +51,10 @@ export default {
         }
         return item.isReady
       })
+    },
+    roomMsgs() {
+      // todo: 播放roomMsgs里的语音消息
+      console.log(this.roomMsgs)
     }
   },
   methods: {
@@ -54,7 +65,41 @@ export default {
     // 开始游戏
     startGame () {
       this.$util.initializeGame()
-    }
+    },
+    // 开始录音
+    startRecord () {
+      this.timer = setTimeout(() => {
+        this.isLong = true
+      }, 500)
+      console.log('开始录音')
+      recorderManager.start({
+        duration: 10000,
+        format: "mp3",
+        sampleRate: 44100,
+        encodeBitRate: 128000,
+      })
+    },
+    // 结束录音
+    stopRecord () {
+      console.log('结束录音')
+      recorderManager.stop()
+    },
+    // 上传音频
+    async uploadAudio(filePath) {
+      // 上传录音
+      let res = await this.$util.uploadAudio(filePath)
+      let url = JSON.parse(res[1].data).data.url
+      console.log(url)
+      this.$util.sendRoomMessage(this.userInfo._id, url)
+    },
+  },
+  onLoad() {
+    // 录音结束后自动进行上传
+    recorderManager.onStop(res => {
+      if (this.isLong) {
+        this.uploadAudio(res.tempFilePath)
+      }
+    })
   },
   onUnload() {
     this.$util.leaveRoom()
@@ -82,6 +127,13 @@ export default {
     margin-bottom: 10px;
     display: flex;
     justify-content: center;
+  }
+
+  &_speak {
+    width: 100vw;
+    position: fixed;
+    left: 0;
+    bottom: 0;
   }
 }
 </style>>

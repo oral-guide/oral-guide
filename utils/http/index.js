@@ -80,6 +80,31 @@ async function initializeGame() {
         type: 'initializeGame'
     })
 }
+// 上传音频并返回相应url
+async function uploadAudio(filePath) {
+    const option = {
+        url: "https://humansean.com:8080/upload/audio",
+        filePath,
+        formData: {
+            filePath,
+        },
+        name: "myFile",
+    };
+    let res = await uni.uploadFile(option);
+    return res;
+}
+// 发送语音消息
+async function sendRoomMessage(userId, url) {
+    return await sendSocketMsg({
+        type: 'sendRoomMessage',
+        data: {
+            msg: {
+                userId,
+                url
+            }
+        }
+    })
+}
 // 登录相关
 async function login() {
     let [err, { code }] = await uni.login({ provider: 'weixin' });
@@ -136,5 +161,7 @@ export default {
     enterRoom,
     leaveRoom,
     toggleReady,
-    initializeGame
+    initializeGame,
+    uploadAudio,
+    sendRoomMessage
 }

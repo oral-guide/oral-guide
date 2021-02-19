@@ -12,7 +12,7 @@ const store = new Vuex.Store({
         roomId: 0,   // 当前房间id
         isOwner: false,   // 用户是否为当前房间房主
         isReady: false, // 用户是否准备
-        roomMsgs: [], // 房间内的语音聊天
+        roomMsgs: [], // 等待室的语音聊天记录
         game: null, // 游戏开始后的逻辑都在game对象
     },
     getters: {
