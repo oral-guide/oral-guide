@@ -1,21 +1,53 @@
-const { mongodb, ObjectId } = require('./mongo.js');
-
+const {
+    mongodb,
+    ObjectId
+} = require('./mongo.js');
+const process = require('process');
+process.on('uncaughtException', err => {
+    console.error(err && err.stack)
+});
 // WebSocket的逻辑
 
 
 let userMap = {};
 let rooms = {
-    spy: {},
+    spy: {
+        1612411639545: {
+            game: null,
+            isPlaying: false,
+            msgs: [],
+            name: "测试房间1",
+            players: [],
+            pswd: "123456",
+            roomId: 1612411639545,
+            seats: 8
+        },
+        1612411664937: {
+            game: null,
+            isPlaying: false,
+            msgs: [],
+            name: "测试房间2",
+            players: [],
+            pswd: "",
+            roomId: 1612411664937,
+            seats: 6,
+        }
+    },
     dialog: {}
 };
 // 用户上线
 function connect(msg, ws) {
-    let { userInfo, hall } = msg.data;
-    
+    let {
+        userInfo,
+        hall
+    } = msg.data;
+
     ws.state = 'hall';
-    ws.position = hall;
+    ws.hallType = hall;
 
     ws.userInfo = userInfo;
+    console.log('userInfo: ', userInfo);
+    console.log('hall: ', hall);
     userMap[userInfo._id] = ws;
     notify(ws, {
         type: 'log',
@@ -26,17 +58,19 @@ function connect(msg, ws) {
     console.log('用户上线: ', userInfo._id);
     updateRooms(0, hall, ws);
 }
+
 function onClose(msg, ws) {
-    let { _id } = ws.userInfo;
+    console.log(ws.userInfo);
+    let {
+        _id
+    } = ws.userInfo;
     switch (ws.state) {
-        case "hall":
-            // delete waitingPlayers[_id];
-            break;
         case "room":
+            leaveRoom(null, ws);
             // delete searchingPlayers[_id];
             break;
         case "gaming":
-            // leaveRoom(ws.roomId, _id);
+            leaveRoom(null, ws);
             break;
     }
     delete userMap[_id];
@@ -57,7 +91,19 @@ function updateRooms(broadcastType, hall, target) {
             notify(target, reply); // 此时target即单个用户websocket实例
             break;
         case 1:
-            roomBroadcast(target, reply); // 此时target即对应房间id
+            roomBroadcast(target, { // 此时target即room
+                type: 'update',
+                key: 'room',
+                data: {
+                    room: target
+                }
+            });
+            roomBroadcast(target, {
+                type: 'log',
+                data: {
+                    msg: target
+                }
+            });
             break;
         case 2:
             hallBroadcast(hall, reply);
@@ -72,7 +118,7 @@ function updateRooms(broadcastType, hall, target) {
 function createRoom(msg, ws) {
     // msg = {
     //     type: "createRoom",
-    //     data: { name, pswd, seats, type }
+    //     data: { name, pswd, seats }
     // }
     let {
         roomId,
@@ -90,88 +136,255 @@ function createRoom(msg, ws) {
         isPlaying: false,
         game: null
     }
-    rooms[ws.position][roomId] = room;
-    updateRooms(2, ws.position);
+    rooms[ws.hallType][roomId] = room;
+    updateRooms(2, ws.hallType);
     notify(ws, {
         type: 'log',
         data: {
-            msg: `房间“${room.name}”被创建了。`,
+            msg: `房间“${room.name}”被创建了。该房间对象长这样：`,
+        }
+    })
+    notify(ws, {
+        type: 'log',
+        data: {
+            msg: room,
         }
     })
     console.log(`房间“${room.name}”被创建了。`);
 }
 
-function enterRoom(msg) {
+function enterRoom(msg, ws) {
     // msg = {
     //     type: "enterRoom",
-    //     data: { roomId, user }
+    //     data: { roomId, isOwner }
     // }
     let {
         roomId,
-        user
+        isOwner
     } = msg.data;
-    let room = rooms.find(room => room.roomId === roomId);
-    room.users.push(user);
+    // 更新room
+    let room = rooms[ws.hallType][roomId];
+    room.players.push({
+        ...ws.userInfo,
+        isReady: false,
+        isOwner
+    });
 
-    if (room.users.length === room.seats) {
-        // 人满了发车
-        startSpyGame(room)
-    }
 
     // 更新用户的room状态
-    userMap[user.name].user.roomId = roomId;
+    ws.state = 'room';
+    ws.roomId = roomId;
+    ws.isOwner = isOwner;
 
-    updateRooms(2);
-
-    console.log(`${user.name}进入了房间“${room.name}”。目前房间内人数为${room.users.length}/${room.seats}`);
+    updateRooms(2, ws.hallType);
+    updateRooms(1, '', room);
+    notify(ws, {
+        type: 'log',
+        data: {
+            msg: `【${ws.userInfo.nickName}】进入了房间“${room.name}”。目前房间内人数为${room.players.length}/${room.seats}。`,
+        }
+    })
+    console.log(`【${ws.userInfo.nickName}】进入了房间“${room.name}”。目前房间内人数为${room.players.length}/${room.seats}`);
 }
 
-function leaveRoom(msg) {
+
+function leaveRoom(msg, ws) {
     // msg = {
     //     type: "leaveRoom",
-    //     data: { roomId, user }
     // }
     let {
-        roomId,
-        user
-    } = msg.data;
-    leaveHelper(roomId, user);
-}
+        roomId
+    } = ws;
+    let room = rooms[ws.hallType][roomId];
+    // if (!room) return;
 
-function forceLeaveRoom(ws) {
-    let roomId = ws.user.roomId;
-    let user = ws.user;
-    leaveHelper(roomId, user);
+    room.players.splice(room.players.findIndex(player => player._id === ws.userInfo._id), 1);
 
-}
-
-function leaveHelper(roomId, user) {
-    let room = rooms.find(room => room.roomId === roomId);
-    if (!room) return;
-    if (room.users.length === 1) {
-        // 最后一个人离开当前房间，即销毁此房间
+    // 最后一个人离开当前房间，即销毁此房间
+    if (!room.players.length) {
         console.log(`房间“${room.name}”没人了，被销毁了。`);
-        rooms.splice(rooms.indexOf(room), 1);
+        delete rooms[ws.hallType][roomId];
     } else {
-        // 用户离开房间
-        room.users.splice(room.users.findIndex(u => u.name === user.name), 1);
+        // 房主退出时，移交权限
+        if (ws.isOwner) {
+            let {
+                _id
+            } = room.players[0];
+            userMap[_id].isOwner = true;
+            room.players[0].isOwner = true;
+            notify(userMap[_id], {
+                type: 'update',
+                key: 'isOwner',
+                data: {
+                    isOwner: true
+                }
+            })
+        }
+        // 给房内其他人更新
+        updateRooms(1, '', room);
     }
+
     // 更新用户的room状态
-    userMap[user.name].user.roomId = 0;
-    updateRooms(2);
-    console.log(`${user.name}离开了房间“${room.name}”。`);
+    delete ws.roomId;
+    ws.state = 'hall';
+
+    updateRooms(2, ws.hallType);
+    if (msg) {
+        notify(ws, {
+            type: 'log',
+            data: {
+                msg: `【${ws.userInfo.nickName}】离开了房间“${room.name}”。`,
+            }
+        })
+    }
+    console.log(`${ws.userInfo.nickName}离开了房间“${room.name}”。`);
+}
+
+function toggleReady(msg, ws) {
+    // msg = {
+    //     type: "toggleReady",
+    //     data: {
+    //         isReady
+    //     }
+    // }
+    let {
+        isReady
+    } = msg.data;
+    let {
+        roomId,
+        hallType,
+        userInfo
+    } = ws;
+    let room = rooms[hallType][roomId];
+    let player = room.players.find(player => player._id === userInfo._id);
+    console.log(player);
+    player.isReady = !isReady;
+    updateRooms(1, '', room);
+    notify(ws, {
+        type: 'update',
+        key: 'isReady',
+        data: {
+            isReady: !isReady
+        }
+    })
+    roomBroadcast(room, {
+        type: 'log',
+        data: {
+            msg: room
+        }
+    })
 }
 
 // 消息相关
-function updateRoom(msg) {
-    let room = rooms.find(room => room.roomId === msg.roomId);
-    // key可以是msgs等
-    room[msg.key] = msg.data[msg.key];
-    updateRooms(1, room);
+function sendRoomMessage(msg, ws) {
+    // msg = {
+    //     type: "sendRoomMessage",
+    //     data: {
+    //         msg: { userId, url }
+    //     }
+    // }
+    let {
+        roomId,
+        hallType
+    } = ws;
+    let room = rooms[hallType][roomId];
+    roomBroadcast(room, {
+        type: 'updateArray',
+        key: 'roomMsgs',
+        data: {
+            roomMsgs: msg.data
+        }
+    })
+    roomBroadcast(room, {
+        type: 'log',
+        data: {
+            msg: '收到聊天消息：'
+        }
+    })
+    roomBroadcast(room, {
+        type: 'log',
+        data: {
+            msg: msg.data
+        }
+    })
 }
-// 更新room.game的相关信息，如player.records录音数据，player.isAlive的情况等
-function updateGameInfo(msg) {
-    let room = rooms.find(room => room.roomId === msg.roomId);
+
+function initializeGame(msg, ws) {
+    // msg = {
+    //     type: "initializeGame",
+    // }
+    let {
+        roomId,
+        hallType
+    } = ws;
+    let room = rooms[hallType][roomId];
+    // 1. 执行页面跳转
+    roomBroadcast(room, {
+        type: 'initializeGame',
+    })
+    // 2. 更新全局game对象
+    let game = startSpyGame(room);
+    room.game = game;
+    roomBroadcast(room, {
+        type: 'update',
+        key: 'game',
+        data: {
+            game
+        }
+    })
+
+    roomBroadcast(room, {
+        type: 'log',
+        data: {
+            msg: '游戏开始！！！'
+        }
+    })
+}
+
+// 游戏相关
+function startSpyGame(room) {
+    // players是对原先users数组的每个对象扩充了isAlive, isSpy等属性的数组
+    let players = room.players
+        .map(player => { // 增加游戏所需属性
+            return {
+                ...player,
+                isAlive: true,
+                isSpy: false,
+                records: [],
+                votes: []
+            }
+        })
+    players.setSpy(); // 设置卧底（4-6一个，7-8两个）
+    let allWords = await mongodb.col('words').find().toArray();
+    let words = allWords[Math.floor(allWords.length * Math.random())];
+    let game = {
+        state: "preparing",
+        players,
+        words,
+        activePlayers() {
+            return this.players.filter(player => player.isAlive).length;
+        },
+        activeSpies() {
+            return this.players.filter(player => player.isAlive && player.isSpy).length;
+        },
+        finishCount: 0
+    }
+    return game;
+}
+
+// 更新game的相关信息，如player.records录音数据，player.isAlive的情况等
+function updateGame(msg, ws) {
+    // msg = {
+    //     type: "updateGame",
+    //     data: {
+    //         key: []
+    //     }
+    // }
+    let {
+        roomId,
+        hallType
+    } = ws;
+    let room = rooms[hallType][roomId];
     // msg.key可以是players等，msg.data.subKey可以是records等
     if (msg.data.subKey) {
         // 有subKey，目前唯有players存在
@@ -187,7 +400,7 @@ function updateGameInfo(msg) {
                 // 全部录音准备完成，更改状态，开始播放
                 room.game.state = "playing";
                 room.game.finishCount = 0;
-                updateRooms(1, room);
+                updateRooms(1, '', room);
             }
 
         }
@@ -200,7 +413,7 @@ function updateGameInfo(msg) {
                 // 全部玩家准备好，可以更改状态了
                 room.game[msg.key] = msg.data[msg.key];
                 room.game.finishCount = 0;
-                updateRooms(1, room);
+                updateRooms(1, '', room);
             }
 
         } else {
@@ -211,7 +424,7 @@ function updateGameInfo(msg) {
 }
 
 // 投票相关（初步逻辑：全部投好了再结算
-function vote(msg) {
+function vote(msg, ws) {
     let room = rooms.find(room => room.roomId === msg.roomId);
     room.game.voteResult.push(msg.data);
     if (room.game.voteResult.length === room.game.activePlayers()) {
@@ -242,138 +455,39 @@ function vote(msg) {
             room.game.state = "revoting";
         }
         // GO!
-        updateRooms(1, room);
+        updateRooms(1, '', room);
     }
 }
 
-// 游戏相关
-function startSpyGame(room) {
-    // players是对原先users数组的每个对象扩充了isAlive, isSpy等属性的数组
-    let players = room.users
-        .shuffle() // 打乱顺序
-        .map(user => { // 增加游戏所需属性
-            return {
-                ...user,
-                isAlive: true,
-                isSpeaking: false,
-                isSpy: false,
-                records: []
-            }
-        })
-    players.setSpy(); // 设置卧底（4-6一个，7-8两个）
-    room.game = {
-        state: "preparing",
-        players,
-        words: [{
-                name: 'library',
-                imgUrl: 'https://5b0988e595225.cdn.sohucs.com/images/20171108/75dc96cbc4264828a2832d6abc0b7456.jpg',
-                definitions: [
-                    `a room or set of rooms where books and other literary materials are kept`,
-                    `a collection of literary materials, films, CDs, children's toys, etc, kept for borrowing or reference`,
-                    `the building or institution that houses such a collection: a public library`,
-                    `a set of books published as a series, often in a similar format`,
-                    `computing a collection of standard programs and subroutines for immediate use, usually stored on disk or some other storage device`,
-                    `a collection of specific items for reference or checking against: a library of genetic material`
-                ],
-                keywords: [
-                    'book collection',
-                    'book room',
-                    'study',
-                    'information center',
-                    'reference center',
-                    'media center'
-                ],
-                sentences: [{
-                        english: `We've consulted a number of books about the subject in the library.`,
-                        chinese: `我们在图书馆查阅了很多有关这个题目的书籍。`
-                    },
-                    {
-                        english: `The library contains a large number of foreign language reference books.`,
-                        chinese: `图书馆有大量的外文参考书。`
-                    },
-                    {
-                        english: `I believe the book is now out of print, but it can easily be borrowed from libraries.`,
-                        chinese: `我想这本书现在已经停印了，但从图书馆很容易借到。`
-                    },
-                    {
-                        english: `The library attracts thousands of scholars and researchers.`,
-                        chinese: `那个图书馆吸引了成千上万的学者和研究人员。`
-                    }
-                ]
-            },
-            {
-                name: 'bookstore',
-                imgUrl: 'http://pic.bbs.0554cc.cn/forum/201903/05/092211eqy6tuhzwpf06j4n.jpg?imageView2/2/w/750',
-                definitions: [
-                    `a store where books are sold`
-                ],
-                keywords: [
-                    'buy',
-                    'shop',
-                    'seller',
-                    'bookseller'
-                ],
-                sentences: [{
-                        english: `I spent hours browsing in the bookstore.`,
-                        chinese: `我花了几个小时在书店里浏览图书。`
-                    },
-                    {
-                        english: `I rent a video from a bookstore.`,
-                        chinese: `我的录像机是从书店租来的。`
-                    },
-                    {
-                        english: `At the bookstore I bought a dictionary, a grammar book, and a text book.`,
-                        chinese: `我在书店买了一本词典、一本语法书和一本教科书。`
-                    },
-                    {
-                        english: `I think this is Amazon Bookstore, determination and humanity of the design concept created it successful.`,
-                        chinese: `我认为正是亚马逊书店的这种决心和人性化的设计理念造就了它的成功。`
-                    }
-                ]
-            }
-        ],
-        activePlayers() {
-            return this.players.filter(player => player.isAlive).length;
-        },
-        activeSpies() {
-            return this.players.filter(player => player.isAlive && player.isSpy).length;
-        },
-        finishCount: 0,
-        voteResult: [],
-        voteMsg: "",
-        targetPlayer: ""
-    }
-    // 开始游戏
-    roomBroadcast(room, {
-        type: "initializeGame"
-    })
-}
+
 
 function notify(ws, reply) {
     ws.send(JSON.stringify(reply));
 }
 
 function roomBroadcast(room, reply) {
-    room.users.forEach(user => {
-        if (userMap[user.name]) {
-            userMap[user.name].send(JSON.stringify(reply));
+    room.players.forEach(player => {
+        if (userMap[player._id]) {
+            userMap[player._id].send(JSON.stringify(reply));
         }
     })
 }
+
 function hallBroadcast(hall, reply) {
     Object.keys(userMap).forEach(key => {
         const ws = userMap[key];
-        if (ws.state === 'hall' && ws.position === hall) {
+        if (ws.state === 'hall' && ws.hallType === hall) {
             ws.send(JSON.stringify(reply));
         }
     })
 }
-function broadcast(reply) {
-    Object.keys(userMap).forEach(key => {
-        const ws = userMap[key];
-        ws.send(JSON.stringify(reply));
-    })
-}
+
+// function broadcast(reply) {
+//     Object.keys(userMap).forEach(key => {
+//         const ws = userMap[key];
+//         ws.send(JSON.stringify(reply));
+//     })
+// }
 
 
 
@@ -437,9 +551,11 @@ module.exports = {
     createRoom,
     enterRoom,
     leaveRoom,
+    toggleReady,
+    initializeGame,
     // 消息相关
-    updateRoom,
-    updateGameInfo,
+    sendRoomMessage,
+    updateGame,
     // 投票相关
     vote
 }

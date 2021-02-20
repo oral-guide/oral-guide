@@ -1,17 +1,23 @@
 <template>
   <div class="spy">
-    <div class="spy_seat">
-      <seat :seatInfo="seatInfo[i]" v-for="i in 8" :key="i">{{i+1}}</seat>
-    </div>
+        <vote></vote>
+        <word></word>
+        <div class="spy_seat">
+            <seat :seatInfo="seatInfo[i]" v-for="i in 8" :key="i">{{i+1}}</seat>
+        </div>
   </div>
 </template>
 
 <script>
 import Seat from "../../components/spySeat";
+import vote from '../../components/vote'
+import word from '../../components/word'
 export default {
   name: "Spy",
   components: {
     Seat,
+    vote,
+    word,
   },
   data() {
     return {

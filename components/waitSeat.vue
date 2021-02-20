@@ -2,25 +2,19 @@
   <!-- 等待房间的座位 -->
   <div class="seat">
     <div class="seat_avatar">
-      <img v-if="seatInfo.status===2||seatInfo.status===3" :src="seatInfo.avatarUrl" alt="">
-      <img v-if="seatInfo.status===3" class="ready" src="../static/waitRoom/ready.png" alt="">
-      <img v-else-if="seatInfo.status===4" class="ban" src="../static/waitRoom/lock.png" alt="">
+      <img v-if="userInfo" :src="userInfo.avatarUrl" alt="">
+      <img v-if="userInfo && userInfo.isOwner" class="owner" src="../static/waitRoom/owner.png" alt="">
+      <img v-if="userInfo && userInfo.isReady" class="ready" src="../static/waitRoom/ready.png" alt="">
+      <!-- <img v-else-if="userInfo.status===4" class="ban" src="../static/waitRoom/lock.png" alt=""> -->
     </div>
-    <div class="seat_nick">{{seatInfo.nickName}}</div>
+    <div class="seat_nick">{{userInfo ? userInfo.nickName : ''}}</div>
   </div>
 </template>
 
 <script>
-// 座位状态
-const status = {
-  1: 'empty',
-  2: 'notReady',
-  3: 'ready',
-  4: 'ban'
-}
 export default {
   name: 'waitSeat',
-  props: ['seatInfo']
+  props: ['userInfo']
 }
 </script>
 
@@ -54,10 +48,17 @@ export default {
         height: 4vw;
       }
 
-      &.ban {
-        width: 8vw;
-        height: 8vw;
+      &.owner {
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        width: 6vw;
+        height: 6vw;
       }
+      // &.ban {
+      //   width: 8vw;
+      //   height: 8vw;
+      // }
     }
   }
 

@@ -1,99 +1,107 @@
 <template>
   <!-- 等待房间 -->
   <div class="wait">
-    <!-- 座位区 -->
-    <div class="wait_seat">
-      <waitSeat :seatInfo="seatInfo[i]" v-for="i in 8" :key="i"></waitSeat>
-    </div>
-    <!-- 准备/房间设置按钮 -->
-    <div class="wait_ready">
-      <van-button color="#ff4101" v-if="isHost" :disabled="!isAllReady">开始游戏</van-button>
-      <van-button color="#ff4101" v-else-if="!isReady" @click="toggleReady">准备</van-button>
-      <van-button color="#ff4101" plain v-else @click="toggleReady">取消准备</van-button>
-      <!-- <a class="wait_ready_setting" v-if="isHost"></a> -->
-    </div>
-    <chatArea></chatArea>
+    <van-skeleton title row="3"	:loading="room.players.length===0">
+      <!-- 座位区 -->
+      <div class="wait_seat">
+        <waitSeat :userInfo="room.players[i]" v-for="i in 8" :key="i"></waitSeat>
+      </div>
+      <!-- 准备/取消准备/开始游戏按钮 -->
+      <div class="wait_ready">
+        <van-button color="#ff4101" v-if="isOwner" :disabled="!isAllReady" @click="startGame">开始游戏</van-button>
+        <van-button color="#ff4101" v-else-if="!isReady" @click="toggleReady">准备</van-button>
+        <van-button color="#ff4101" plain v-else @click="toggleReady">取消准备</van-button>
+      </div>
+      <!-- 聊天框 -->
+      <!-- <chatArea></chatArea> -->
+      <!-- 发送语音 -->
+      <div class="wait_speak">
+        <van-button type="default" block @touchstart="startRecord" @touchend="stopRecord">按住说话</van-button>
+      </div>
+    </van-skeleton>
 	</div>
 </template>
 
 <script>
 import waitSeat from '../../components/waitSeat'
-import chatArea from '../../components/chatArea'
+// import chatArea from '../../components/chatArea'
+import { mapState } from 'vuex'
+const recorderManager = uni.getRecorderManager()
 
 export default {
   name: 'waitRoom',
   components: {
-    waitSeat,
-    chatArea
+    waitSeat
   },
   data() {
     return {
-      isHost: true, // 是否为房主
-      isReady: false, // 是否已准备
+      timer: null,  // 计时器
       isAllReady: false, // 是否房间内所有人已准备
-      // 座位信息
-      seatInfo: [
-        {
-          id: 1,
-          status: 2,
-          avatarUrl: '../static/waitRoom/avatar.jpg',
-          nickName: '珍珠'
-        },
-        {
-          id: 2,
-          status: 2,
-          avatarUrl: '../static/waitRoom/avatar.jpg',
-          nickName: '奶盖'
-        },
-        {
-          id: 3,
-          status: 3,
-          avatarUrl: '../static/waitRoom/avatar.jpg',
-          nickName: '茉莉'
-        },
-        {
-          id: 4,
-          status: 3,
-          avatarUrl: '../static/waitRoom/avatar.jpg',
-          nickName: '花茶'
-        },
-        {
-          id: 5,
-          status: 1,
-          avatarUrl: '',
-          nickName: ''
-        },
-        {
-          id: 6,
-          status: 1,
-          avatarUrl: '',
-          nickName: ''
-        },
-        {
-          id: 7,
-          status: 4,
-          avatarUrl: '',
-          nickName: ''
-        },
-        {
-          id: 8,
-          status: 4,
-          avatarUrl: '',
-          nickName: ''
+      isLong: false // 录音时长是否大于500ms
+    }
+  },
+  computed: {
+    ...mapState(['room', 'isOwner', 'isReady', 'userInfo', 'roomMsgs'])
+  },
+  watch: {
+    room() {
+      this.isAllReady = this.room.players.every(item => {
+        if (item.isOwner) {
+          return true
         }
-      ]
-    };
+        return item.isReady
+      })
+    },
+    roomMsgs() {
+      // todo: 播放roomMsgs里的语音消息
+      console.log(this.roomMsgs)
+    }
   },
   methods: {
     // 准备/取消准备
     toggleReady () {
-      console.log(this.isReady)
-      this.isReady = !this.isReady
-      console.log(this.isReady)
-    }
+      this.$util.toggleReady(this.isReady)
+    },
+    // 开始游戏
+    startGame () {
+      this.$util.initializeGame()
+    },
+    // 开始录音
+    startRecord () {
+      this.timer = setTimeout(() => {
+        this.isLong = true
+      }, 500)
+      console.log('开始录音')
+      recorderManager.start({
+        duration: 10000,
+        format: "mp3",
+        sampleRate: 44100,
+        encodeBitRate: 128000,
+      })
+    },
+    // 结束录音
+    stopRecord () {
+      console.log('结束录音')
+      recorderManager.stop()
+    },
+    // 上传音频
+    async uploadAudio(filePath) {
+      // 上传录音
+      let res = await this.$util.uploadAudio(filePath)
+      let url = JSON.parse(res[1].data).data.url
+      console.log(url)
+      this.$util.sendRoomMessage(this.userInfo._id, url)
+    },
+  },
+  onLoad() {
+    // 录音结束后自动进行上传
+    recorderManager.onStop(res => {
+      if (this.isLong) {
+        this.uploadAudio(res.tempFilePath)
+      }
+    })
   },
   onUnload() {
-    console.log('unload')
     this.$util.leaveRoom()
   }
 };
@@ -119,19 +127,13 @@ export default {
     margin-bottom: 10px;
     display: flex;
     justify-content: center;
-    // position: relative;
+  }
 
-    // &_setting {
-    //   display: block;
-    //   position: absolute;
-    //   right: 20px;
-    //   bottom: 50%;
-    //   transform: translateY(50%);
-    //   width: 5vw;
-    //   height: 5vw;
-    //   background: url(../../static/waitRoom/setting_btn.png) no-repeat;
-    //   background-size: 100% 100%;
-    // }
+  &_speak {
+    width: 100vw;
+    position: fixed;
+    left: 0;
+    bottom: 0;
   }
 }
 </style>>

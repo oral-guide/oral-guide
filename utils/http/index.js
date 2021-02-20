@@ -54,15 +54,55 @@ async function enterRoom(params) {
     return await sendSocketMsg({
         type: 'enterRoom',
         data: { 
-            roomId
-        },
-        isOwner
+            roomId,
+            isOwner
+        }
     })
 }
 // 退出房间
 async function leaveRoom() {
     return await sendSocketMsg({
         type: 'leaveRoom'
+    })
+}
+// 准备/取消准备
+async function toggleReady(isReady) {
+    return await sendSocketMsg({
+        type: 'toggleReady',
+        data: {
+            isReady
+        }
+    })
+}
+// 开始游戏
+async function initializeGame() {
+    return await sendSocketMsg({
+        type: 'initializeGame'
+    })
+}
+// 上传音频并返回相应url
+async function uploadAudio(filePath) {
+    const option = {
+        url: "https://humansean.com:8080/upload/audio",
+        filePath,
+        formData: {
+            filePath,
+        },
+        name: "myFile",
+    };
+    let res = await uni.uploadFile(option);
+    return res;
+}
+// 发送语音消息
+async function sendRoomMessage(userId, url) {
+    return await sendSocketMsg({
+        type: 'sendRoomMessage',
+        data: {
+            msg: {
+                userId,
+                url
+            }
+        }
     })
 }
 // 登录相关
@@ -119,5 +159,9 @@ export default {
     getUserInfo,
     createRoom,
     enterRoom,
-    leaveRoom
+    leaveRoom,
+    toggleReady,
+    initializeGame,
+    uploadAudio,
+    sendRoomMessage
 }

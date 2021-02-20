@@ -115,7 +115,7 @@ export default {
     }
   },
   methods: {
-    ...mapMutations(['setHall', 'setRoomId']),
+    ...mapMutations(['setHall', 'setRoomId', 'setIsOwner']),
     // 页面onLoad封装
     async myLoad() {
       // 获取URL中的参数并开启WS
@@ -178,12 +178,13 @@ export default {
         pswd,
         seats: +seats
       })
+      this.setIsOwner(true) // 给用户房主身份
       this.setRoomId(roomId)  // 保存房间ID
       this.hideAddDialog()
       this.goWaitRoom(roomId, true)
     },
     // 进入等待房间页面
-    goWaitRoom(roomId, isOwner) {
+    goWaitRoom(roomId, isOwner = false) {
       this.$util.enterRoom({
         roomId,
         isOwner
@@ -199,13 +200,13 @@ export default {
         this.roomPswd = room.pswd
         this.isEnter = true
       } else {
-        this.goWaitRoom(this.selectedId, false)
+        this.goWaitRoom(this.selectedId)
       }
     },
     // 判断输入密码是否正确
     confirmEnter() {
       if (this.myPswd === this.roomPswd) {
-        this.goWaitRoom(this.selectedId, false)
+        this.goWaitRoom(this.selectedId)
       } else {
         this.isEnter = false
         Toast.fail('密码错误，请再试一遍')
@@ -220,53 +221,5 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.hall {
-  height: 100vh;
-  padding-top: 20px;
-  background-color: #f8f8f8;
-
-  &_room {
-    width: 80vw;
-    height: 10vh;
-    padding: 0 30px;
-    margin: 20px auto 20px auto;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background-color: #fff;
-    box-shadow: 0 4px 10px #eee;
-
-    &_l {
-      display: flex;
-      align-items: center;
-
-      img {
-        display: block;
-        width: 6vw;
-        height: 6vw;
-        margin-right: 10px;
-
-        &.lock {
-          width: 16px;
-          height: 16px;
-          margin-left: 4px;
-        }
-      }
-
-      h1 {
-        font-size: 16px;
-      }
-    }
-
-    &_r {
-      font-size: 12px;
-      text-align: center;
-      line-height: 20px;
-
-      .start {
-        color: #ff4101;
-      }
-    }
-  }
-}
+@import './index.scss';
 </style>>
