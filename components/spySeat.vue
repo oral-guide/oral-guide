@@ -17,7 +17,7 @@
 
     <!-- 空座位 -->
     <div v-else class="seat_empty">
-      <img class="ban" src="../static/waitRoom/lock.png" />
+      <img class="ban" src="../static/spy/lock.png" />
     </div>
   </div>
 </template>
