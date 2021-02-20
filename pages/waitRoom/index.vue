@@ -8,9 +8,10 @@
       </div>
       <!-- 准备/取消准备/开始游戏按钮 -->
       <div class="wait_ready">
-        <van-button color="#ff4101" v-if="isOwner" :disabled="!isAllReady" @click="startGame">开始游戏</van-button>
+        <van-button color="#ff4101" v-if="isOwner" @click="startGame">开始游戏</van-button>
+        <!-- <van-button color="#ff4101" v-if="isOwner" :disabled="!isAllReady" @click="startGame">开始游戏</van-button>
         <van-button color="#ff4101" v-else-if="!isReady" @click="toggleReady">准备</van-button>
-        <van-button color="#ff4101" plain v-else @click="toggleReady">取消准备</van-button>
+        <van-button color="#ff4101" plain v-else @click="toggleReady">取消准备</van-button> -->
       </div>
       <!-- 发送语音 -->
       <div class="wait_speak">
@@ -43,14 +44,14 @@ export default {
     ...mapState(['room', 'isOwner', 'isReady', 'userInfo', 'roomMsgs'])
   },
   watch: {
-    room() {
-      this.isAllReady = this.room.players.every(item => {
-        if (item.isOwner) {
-          return true
-        }
-        return item.isReady
-      })
-    },
+    // room() {
+    //   this.isAllReady = this.room.players.every(item => {
+    //     if (item.isOwner) {
+    //       return true
+    //     }
+    //     return item.isReady
+    //   })
+    // },
     roomMsgs() {
       if (this.roomMsgs.length !== 0) {
         this.playAudio()
