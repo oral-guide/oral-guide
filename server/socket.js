@@ -342,7 +342,7 @@ function initializeGame(msg, ws) {
 }
 
 // 游戏相关
-function startSpyGame(room) {
+async function startSpyGame(room) {
     // players是对原先users数组的每个对象扩充了isAlive, isSpy等属性的数组
     let players = room.players
         .map(player => { // 增加游戏所需属性
@@ -351,7 +351,8 @@ function startSpyGame(room) {
                 isAlive: true,
                 isSpy: false,
                 records: [],
-                votes: []
+                votes: [],
+                voteStatus: 0
             }
         })
     players.setSpy(); // 设置卧底（4-6一个，7-8两个）
@@ -373,6 +374,44 @@ function startSpyGame(room) {
 }
 
 // 更新game的相关信息，如player.records录音数据，player.isAlive的情况等
+function updateGameState(msg, ws) {
+    // msg = {
+    //     type: "updateGameState",
+    //     data: {
+    //         state: ''
+    //     }
+    // }
+    let {
+        roomId,
+        hallType
+    } = ws;
+    let room = rooms[hallType][roomId];
+
+
+    room.game.finishCount++;
+    if (room.game.finishCount === room.game.activePlayers()) {
+        // 全部玩家准备好，可以更改状态了
+        let {
+            state
+        } = msg.data;
+        room.game.state = state
+        room.game.finishCount = 0;
+        roomBroadcast(target, { // 此时target即room
+            type: 'updateGame',
+            key: 'state',
+            data: {
+                state
+            }
+        });
+        roomBroadcast(target, { // 此时target即room
+            type: 'log',
+            data: {
+                msg: `改变state为${state}！`
+            }
+        });
+    }
+}
+
 function updateGame(msg, ws) {
     // msg = {
     //     type: "updateGame",
@@ -406,19 +445,9 @@ function updateGame(msg, ws) {
         }
     } else {
         // 更新game的key
-        if (msg.key === "state") {
-            // 如果是更新state，得收集到所有玩家完成的信号才更改
-            room.game.finishCount++;
-            if (room.game.finishCount === room.game.activePlayers()) {
-                // 全部玩家准备好，可以更改状态了
-                room.game[msg.key] = msg.data[msg.key];
-                room.game.finishCount = 0;
-                updateRooms(1, '', room);
-            }
 
-        } else {
-            room.game[msg.key] = msg.data[msg.key];
-        }
+        room.game[msg.key] = msg.data[msg.key];
+
     }
 
 }
@@ -555,6 +584,7 @@ module.exports = {
     initializeGame,
     // 消息相关
     sendRoomMessage,
+    updateGameState,
     updateGame,
     // 投票相关
     vote

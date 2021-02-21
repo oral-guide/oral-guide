@@ -14,6 +14,7 @@ const store = new Vuex.Store({
         isReady: false, // 用户是否准备
         roomMsgs: [], // 等待室的语音聊天记录
         game: null, // 游戏开始后的逻辑都在game对象
+        curSpeak: ''    // 当前发言的用户id
     },
     getters: {
         // curRoom(state) {
@@ -41,6 +42,9 @@ const store = new Vuex.Store({
         },
         setIsOwner(state, isOwner) {
             state.isOwner = isOwner
+        },
+        setCurSpeak(state, curSpeak) {
+            state.curSpeak = curSpeak
         }
     },
     actions: {}
