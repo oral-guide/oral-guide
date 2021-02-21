@@ -19,6 +19,15 @@ const store = new Vuex.Store({
         // curRoom(state) {
         //     return state.rooms[state.roomId]
         // }
+        players: (state, getters) => {
+            return getters.game ? state.game.players : [];
+        },
+        player: (state, getters) => {
+            return getters.players.find(player => player._id === state.userInfo._id);
+        },
+        // msgs:(state,getters)=>{
+        //     return getters.currentRoom? getters.currentRoom.msgs:null;
+        // }
     },
     mutations: {
         setUserInfo(state, userInfo) {

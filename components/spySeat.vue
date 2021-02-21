@@ -7,6 +7,7 @@
         <img :class="seatInfo.isAlive? 'alive' : 'dead'" :src="seatInfo.avatarUrl" />
         <!-- 玩家死亡标志 -->
         <img class="cross" v-if="!seatInfo.isAlive" src="../static/spy/cross.png" alt />
+        <!-- 玩家序号 -->
         <div class="seat_number"><slot></slot></div>
         <!-- <div v-if="seatInfo" class="seat_number">{{seatInfo.id}}</div> -->
         <!-- 发言 -->
