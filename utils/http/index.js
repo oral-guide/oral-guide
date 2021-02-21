@@ -80,6 +80,16 @@ async function initializeGame() {
         type: 'initializeGame'
     })
 }
+// 改变game.state
+async function updateGameState(state) {
+    return await sendSocketMsg({
+        type: 'updateGameState',
+        data: {
+            state
+        }
+    })
+}
+
 // 上传音频并返回相应url
 async function uploadAudio(filePath) {
     const option = {
@@ -162,6 +172,7 @@ export default {
     leaveRoom,
     toggleReady,
     initializeGame,
+    updateGameState,
     uploadAudio,
     sendRoomMessage
 }
