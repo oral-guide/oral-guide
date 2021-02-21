@@ -4,16 +4,15 @@
     <van-skeleton title row="3"	:loading="room.players.length===0">
       <!-- 座位区 -->
       <div class="wait_seat">
-        <waitSeat :userInfo="room.players[i]" v-for="i in 8" :key="i"></waitSeat>
+        <waitSeat :userInfo="room.players[i]" v-for="i in room.seats" :key="i"></waitSeat>
       </div>
       <!-- 准备/取消准备/开始游戏按钮 -->
       <div class="wait_ready">
-        <van-button color="#ff4101" v-if="isOwner" :disabled="!isAllReady" @click="startGame">开始游戏</van-button>
+        <van-button color="#ff4101" v-if="isOwner" @click="startGame">开始游戏</van-button>
+        <!-- <van-button color="#ff4101" v-if="isOwner" :disabled="!isAllReady" @click="startGame">开始游戏</van-button>
         <van-button color="#ff4101" v-else-if="!isReady" @click="toggleReady">准备</van-button>
-        <van-button color="#ff4101" plain v-else @click="toggleReady">取消准备</van-button>
+        <van-button color="#ff4101" plain v-else @click="toggleReady">取消准备</van-button> -->
       </div>
-      <!-- 聊天框 -->
-      <!-- <chatArea></chatArea> -->
       <!-- 发送语音 -->
       <div class="wait_speak">
         <van-button type="default" block @touchstart="startRecord" @touchend="stopRecord">按住说话</van-button>
@@ -25,8 +24,9 @@
 <script>
 import waitSeat from '../../components/waitSeat'
 // import chatArea from '../../components/chatArea'
-import { mapState } from 'vuex'
+import { mapState, mapMutations } from 'vuex'
 const recorderManager = uni.getRecorderManager()
+const audio = uni.createInnerAudioContext()
 
 export default {
   name: 'waitRoom',
@@ -37,27 +37,29 @@ export default {
     return {
       timer: null,  // 计时器
       isAllReady: false, // 是否房间内所有人已准备
-      isLong: false // 录音时长是否大于500ms
+      isLong: false, // 录音时长是否大于500ms
     }
   },
   computed: {
     ...mapState(['room', 'isOwner', 'isReady', 'userInfo', 'roomMsgs'])
   },
   watch: {
-    room() {
-      this.isAllReady = this.room.players.every(item => {
-        if (item.isOwner) {
-          return true
-        }
-        return item.isReady
-      })
-    },
+    // room() {
+    //   this.isAllReady = this.room.players.every(item => {
+    //     if (item.isOwner) {
+    //       return true
+    //     }
+    //     return item.isReady
+    //   })
+    // },
     roomMsgs() {
-      // todo: 播放roomMsgs里的语音消息
-      console.log(this.roomMsgs)
+      if (this.roomMsgs.length !== 0) {
+        this.playAudio()
+      }
     }
   },
   methods: {
+    ...mapMutations(['setCurSpeak']),
     // 准备/取消准备
     toggleReady () {
       this.$util.toggleReady(this.isReady)
@@ -86,12 +88,17 @@ export default {
     },
     // 上传音频
     async uploadAudio(filePath) {
-      // 上传录音
       let res = await this.$util.uploadAudio(filePath)
       let url = JSON.parse(res[1].data).data.url
-      console.log(url)
       this.$util.sendRoomMessage(this.userInfo._id, url)
     },
+    // 播放语音
+    playAudio() {
+      const { userId, url } = this.roomMsgs[0].msg
+      this.setCurSpeak(userId)
+      audio.src = url
+      audio.play()
+    }
   },
   onLoad() {
     // 录音结束后自动进行上传
@@ -99,6 +106,11 @@ export default {
       if (this.isLong) {
         this.uploadAudio(res.tempFilePath)
       }
+    })
+    // 结束播放语音
+    audio.onEnded(() => {
+      this.setCurSpeak('')
+      this.roomMsgs.shift()
     })
   },
   onUnload() {

@@ -5,16 +5,21 @@
       <img v-if="userInfo" :src="userInfo.avatarUrl" alt="">
       <img v-if="userInfo && userInfo.isOwner" class="owner" src="../static/waitRoom/owner.png" alt="">
       <img v-if="userInfo && userInfo.isReady" class="ready" src="../static/waitRoom/ready.png" alt="">
-      <!-- <img v-else-if="userInfo.status===4" class="ban" src="../static/waitRoom/lock.png" alt=""> -->
+      <img v-if="userInfo && (userInfo._id === curSpeak)" class="speak" src="../static/waitRoom/amplifier.png" alt="">
+      <!-- <img v-if="!userInfo" class="ban" src="../static/waitRoom/lock.png" alt=""> -->
     </div>
     <div class="seat_nick">{{userInfo ? userInfo.nickName : ''}}</div>
   </div>
 </template>
 
 <script>
+import { mapState } from 'vuex'
 export default {
   name: 'waitSeat',
-  props: ['userInfo']
+  props: ['userInfo'],
+  computed: {
+    ...mapState(['curSpeak'])
+  }
 }
 </script>
 
@@ -55,6 +60,15 @@ export default {
         width: 6vw;
         height: 6vw;
       }
+
+      &.speak {
+        position: absolute;
+        right: 0;
+        top: 0;
+        width: 5vw;
+        height: 5vw;
+      }
+
       // &.ban {
       //   width: 8vw;
       //   height: 8vw;
