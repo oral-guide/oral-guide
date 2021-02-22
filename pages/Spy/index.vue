@@ -23,6 +23,7 @@
 import Seat from "../../components/spySeat";
 import vote from "../../components/vote";
 import word from "../../components/word";
+import Toast from "../../wxcomponents/vant/toast/toast";
 import { mapState, mapGetters, mapMutation } from "vuex";
 const recorderManager = uni.getRecorderManager();
 const audio = uni.createInnerAudioContext();
@@ -37,7 +38,7 @@ export default {
   data() {
     return {
       timer: null, // 倒计时
-      timerCount: 3, // 倒计时时间
+      timerCount: 5, // 倒计时时间
       audioSrcList: [], // 录音播放列表
       curIndex: 0, // 录音播放位置，对应玩家位置
       round: 0, // 游戏轮数：大于等于1时就每次调换头尾顺序
@@ -84,7 +85,7 @@ export default {
   },
   computed: {
     ...mapState(["game", "room", "isOwner", "userInfo"]),
-    ...mapGetters(["players", "player"]),
+    ...mapGetters(["players", "player","gameState"]),
   },
   methods: {
     // 准备状态调用的方法，展示倒计时等
@@ -105,7 +106,9 @@ export default {
           clearInterval(this.timer);
           Toast.clear();
           // 全体开始录音
-          this.setRoomState("recording");
+          console.log("recording starts")
+          console.log(this.gameState)
+          this.$util.updateGameState("recording");
         }
       }, 1000);
     },
@@ -115,6 +118,7 @@ export default {
       this.startRecordTimer(time);
     },
     startRecord() {
+      console.log("recording");
       recorderManager.start({
         format: "mp3",
         sampleRate: 44100,
@@ -152,10 +156,10 @@ export default {
       // 将玩家录音的url推进records数组
       this.player.records.push(url);
       // 通过websocket同步自己的录音
-      this.$util.updatePlayerInfo({
-        subKey: "records",
-        playerName: this.player.name,
-        data: { records: this.player.records },
+      this.$util.updatePlayerRecords({
+        data: {
+          userId:this.userInfo._id,
+          url:url},
       });
     },
 
@@ -200,7 +204,7 @@ export default {
           message: "加载中...",
           selector: "#timer",
         });
-        this.$util.emitRoomState("discussing");
+        this.$util.updateGameState("voting");;
         return;
       }
       audio.src = this.audioSrcList[this.curIndex];
@@ -209,10 +213,6 @@ export default {
   },
   watch: {
     gameState(n) {
-      // 分为三种情况
-      // server通知改变，如改变为preparing（下一轮开始），playing（录音结束，开始播放），discussing，revoting（重新投票）
-      // client直接改变，无需在server进行更新，如preparing倒计时结束直接录音
-      // client发起emitRoomState，通知server我这头搞定了，等server确认所有玩家都搞定，再回到第一种情况
       switch (n) {
         case "preparing":
           // 新一轮开始
@@ -224,34 +224,30 @@ export default {
           this.noticeText = "全体录音中。。。";
           break;
         case "playing":
-          // TODO 全体录音结束
+          // 全体录音结束
           Toast.clear();
           this.onPlaying();
           this.noticeText = `当前发言玩家：【${
-            this.players[this.curIndex].name
+            this.players[this.curIndex].nickName
           }】`;
           break;
-        case "discussing":
-          Toast.clear();
-          this.onDiscussing();
-          this.noticeText = "讨论环节";
-          break;
-        case "voting":
-          this.onVoting();
-          this.noticeText = "投票环节";
-          break;
-        case "revoting":
-          this.onVoting();
-          break;
-        case "ending":
-          this.onEnding();
-          this.noticeText = this.game.voteMsg;
-          break;
+        // case "voting":
+        //   this.onVoting();
+        //   this.noticeText = "投票环节";
+        //   break;
+        // case "revoting":
+        //   this.onVoting();
+        //   break;
+        // case "ending":
+        //   this.onEnding();
+        //   this.noticeText = this.game.voteMsg;
+        //   break;
       }
     },
   },
 
   onLoad() {
+    this.onPreparing(5)
     // 录音结束后自动进行上传
     recorderManager.onStop((res) => {
       this.uploadAudio(res.tempFilePath);

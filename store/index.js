@@ -21,11 +21,14 @@ const store = new Vuex.Store({
         //     return state.rooms[state.roomId]
         // }
         players: (state, getters) => {
-            return getters.game ? state.game.players : [];
+            return state.game ? state.game.players : [];
         },
         player: (state, getters) => {
             return getters.players.find(player => player._id === state.userInfo._id);
         },
+        gameState:(state,getters)=>{
+            return state.game? state.game.state : "preparing"
+        }
         // msgs:(state,getters)=>{
         //     return getters.currentRoom? getters.currentRoom.msgs:null;
         // }
