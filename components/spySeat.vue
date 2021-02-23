@@ -27,6 +27,7 @@
 // 投票状态
 import { mapState } from 'vuex'
 const voteStatus = {
+  0:"not" ,//未开始
   1: "voting", //在投
   2: "voted", //已投
   3: "abstained", //弃票

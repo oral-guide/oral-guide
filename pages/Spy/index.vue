@@ -115,8 +115,10 @@ export default {
     },
     // 录音状态调用的方法，包括开始录音，展示倒计时，结束自动上传等
     onRecording(time) {
-      this.startRecord();
-      this.startRecordTimer(time);
+      if (this.player.isAlive) {
+        this.startRecord();
+        this.startRecordTimer(time);
+      }
     },
     startRecord() {
       console.log("开始录音。。。");
@@ -168,12 +170,14 @@ export default {
     onPlaying() {
       // 取出每名玩家records的最新一条，组成当前的播放列表
       this.audioSrcList = this.players.map((player) => {
-        return {
-          userId: player._id,
-          url: player.records[player.records.length - 1],
-        };
+        if (player.isAlive) {
+          return {
+            userId: player._id,
+            url: player.records[player.records.length - 1],
+          };
+        }
       });
-      console.log(this.audioSrcList,this.curIndex);
+      console.log(this.audioSrcList, this.curIndex);
       if (this.round) {
         // 第二轮及以后每轮都反转
         this.dir = Number(!this.dir);
@@ -246,7 +250,7 @@ export default {
           break;
         case "voting":
           Toast.clear();
-          this.setCurSpeak("")
+          this.setCurSpeak("");
           console.log("voting starts");
         //   this.onVoting();
         //   this.noticeText = "投票环节";
