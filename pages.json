@@ -1,12 +1,6 @@
 {
 	"pages": [
 		{
-			"path": "pages/Spy/index",
-			"style": {
-				"navigationBarTitleText": "谁是卧底"
-			}
-		},
-		{
 			"path": "pages/Index/index",
 			"style": {
 				"navigationBarTitleText": "首页"
@@ -24,12 +18,12 @@
 				"navigationBarTitleText": ""
 			}
 		},
-		// {
-		// 	"path": "pages/Spy/index",
-		// 	"style": {
-		// 		"navigationBarTitleText": "谁是卧底"
-		// 	}
-		// },
+		{
+			"path": "pages/Spy/index",
+			"style": {
+				"navigationBarTitleText": "谁是卧底"
+			}
+		},
 		{
 			"path": "pages/myFriend/index",
 			"style": {

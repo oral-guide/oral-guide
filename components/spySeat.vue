@@ -4,14 +4,14 @@
     <!-- 非空座位 -->
     <div v-if="seatInfo">
       <div class="seat_avatar">
-        <img :class="seatInfo.isAlive? 'alive' : 'dead'" :src="seatInfo.avatarUrl" />
+        <img :class="seatInfo.isAlive ? 'alive' : 'dead'" :src="seatInfo.avatarUrl" />
         <!-- 玩家死亡标志 -->
         <img class="cross" v-if="!seatInfo.isAlive" src="../static/spy/cross.png" alt />
         <!-- 玩家序号 -->
         <div class="seat_number"><slot></slot></div>
         <!-- <div v-if="seatInfo" class="seat_number">{{seatInfo.id}}</div> -->
         <!-- 发言 -->
-        <img v-if="seatInfo.isSpeaking" class="speaker" src="../static/spy/speaking.png" alt />
+        <img v-if="curSpeak===seatInfo._id" class="speaker" src="../static/spy/speaking.png" alt />
       </div>
       <div class="seat_nick">{{seatInfo.nickName}}</div>
     </div>
@@ -25,6 +25,7 @@
 
 <script>
 // 投票状态
+import { mapState } from 'vuex'
 const voteStatus = {
   1: "voting", //在投
   2: "voted", //已投
@@ -33,6 +34,9 @@ const voteStatus = {
 export default {
   name: "spySeat",
   props: ["seatInfo"],
+  computed:{
+    ...mapState(["curSpeak"])
+  }
 };
 </script>
 

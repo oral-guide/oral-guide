@@ -89,6 +89,16 @@ async function updateGameState(state) {
         }
     })
 }
+//更新玩家records
+async function updatePlayerRecords(userId,url){
+    return await sendSocketMsg({
+        type:"updatePlayerRecords",
+        data:{
+            userId,
+            url
+        }
+    })
+}
 
 // 上传音频并返回相应url
 async function uploadAudio(filePath) {
@@ -174,5 +184,6 @@ export default {
     initializeGame,
     updateGameState,
     uploadAudio,
-    sendRoomMessage
+    sendRoomMessage,
+    updatePlayerRecords
 }

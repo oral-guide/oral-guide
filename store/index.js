@@ -27,7 +27,7 @@ const store = new Vuex.Store({
             return getters.players.find(player => player._id === state.userInfo._id);
         },
         gameState:(state,getters)=>{
-            return state.game? state.game.state : "preparing"
+            return state.game ? state.game.state : ""
         }
         // msgs:(state,getters)=>{
         //     return getters.currentRoom? getters.currentRoom.msgs:null;
