@@ -214,7 +214,7 @@ export default {
       this.hideEnterDialog()
     }
   },
-  onLoad() {
+  onShow() {
     this.myLoad()
   }
 };

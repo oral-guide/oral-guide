@@ -27,6 +27,7 @@ import waitSeat from '../../components/waitSeat'
 import { mapState, mapMutations } from 'vuex'
 const recorderManager = uni.getRecorderManager()
 const audio = uni.createInnerAudioContext()
+audio.autoplay = true
 
 export default {
   name: 'waitRoom',
@@ -97,7 +98,6 @@ export default {
       const { userId, url } = this.roomMsgs[0].msg
       this.setCurSpeak(userId)
       audio.src = url
-      audio.play()
     }
   },
   onLoad() {
