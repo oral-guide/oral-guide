@@ -177,7 +177,8 @@ export default {
           };
         }
       });
-      console.log(this.audioSrcList, this.curIndex);
+      console.log(this.players)
+      console.log(this.audioSrcList);
       if (this.round) {
         // 第二轮及以后每轮都反转
         this.dir = Number(!this.dir);
@@ -209,6 +210,7 @@ export default {
       if (this.curIndex === -1 || this.curIndex === this.audioSrcList.length) {
         // 9 这一轮结束，开始投票！
         this.round++;
+        this.setCurSpeak('');
         this.$util.updateGameState("voting");
         Toast.loading({
           duration: 0,
@@ -219,11 +221,10 @@ export default {
         return;
       }
       // audio.src = this.audioSrcList[this.curIndex].url;
-      const { userId, url } = this.audioSrcList[this.curIndex];
-      audio.src = url;
-      this.setCurSpeak(userId);
+      audio.src = this.audioSrcList[this.curIndex].url;;
+      this.setCurSpeak(this.audioSrcList[this.curIndex].userId);
       audio.play();
-      console.log(this.curSpeak);
+      console.log("现在speakerID"+this.curIndex);
     },
   },
   watch: {
@@ -250,7 +251,6 @@ export default {
           break;
         case "voting":
           Toast.clear();
-          this.setCurSpeak("");
           console.log("voting starts");
         //   this.onVoting();
         //   this.noticeText = "投票环节";
