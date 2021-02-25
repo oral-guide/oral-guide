@@ -8,8 +8,15 @@
         <!-- 玩家死亡标志 -->
         <img class="cross" v-if="!seatInfo.isAlive" src="../static/spy/cross.png" alt />
         <!-- 玩家序号 -->
-        <div class="seat_number"><slot></slot></div>
-        <!-- <div v-if="seatInfo" class="seat_number">{{seatInfo.id}}</div> -->
+        <div class="seat_number">
+          <slot></slot>
+        </div>
+        <!-- 投票状态 -->
+        <div v-if="seatInfo.voteStatus" class="vote_status">
+          <img v-if="seatInfo.voteStatus===1" src="../static/spy/voting.png" alt />
+          <img v-else-if="seatInfo.voteStatus===2" src="../static/spy/voted.png" alt />
+          <img v-else src="../static/spy/abstained.png" alt />
+        </div>
         <!-- 发言 -->
         <img v-if="curSpeak===seatInfo._id" class="speaker" src="../static/spy/speaking.png" alt />
       </div>
@@ -25,9 +32,9 @@
 
 <script>
 // 投票状态
-import { mapState } from 'vuex'
+import { mapState } from "vuex";
 const voteStatus = {
-  0:"not" ,//未开始
+  0: "not", //未开始
   1: "voting", //在投
   2: "voted", //已投
   3: "abstained", //弃票
@@ -35,9 +42,9 @@ const voteStatus = {
 export default {
   name: "spySeat",
   props: ["seatInfo"],
-  computed:{
-    ...mapState(["curSpeak"])
-  }
+  computed: {
+    ...mapState(["curSpeak"]),
+  },
 };
 </script>
 
@@ -75,6 +82,7 @@ export default {
         // width: 17vw;
         // height: 17vw;
       }
+
       &.speaker {
         width: 10vw;
         height: 10vw;
@@ -83,6 +91,13 @@ export default {
         left: 10vw;
         // display: inline-block;
       }
+    }
+    .vote_status {
+      position: absolute;
+      width: 10vw;
+      height: 10vw;
+      top: -5vw;
+      left: 10vw;
     }
   }
   &_number {
