@@ -25,37 +25,58 @@
       :show="isVote"
     >
       <h3 class="voteTime">
-        <img class="clock" src="../../static/spy/clock.png" alt="">
+        <img class="clock" src="../../static/spy/clock.png" alt />
         {{ voteTime }}s
       </h3>
       <ul>
         <li v-for="(p, i) in validPlayers" :key="i" style="margin: 10px">
           <div class="target">
-            <img class="choosePlayers" :src="p.avatarUrl" alt="">
-            <img v-if="p.voteStatus === 2" class="voted" src="../../static/spy/tick.png" alt="">
-            <img v-if="p.voteStatus === 3" class="abstained" src="../../static/spy/abstained.png" alt="">
+            <img class="choosePlayers" :src="p.avatarUrl" alt />
+            <img v-if="p.voteStatus === 2" class="voted" src="../../static/spy/tick.png" alt />
+            <img
+              v-if="p.voteStatus === 3"
+              class="abstained"
+              src="../../static/spy/abstained.png"
+              alt
+            />
             <div class="votedPlayers" v-if="votedPlayers[p._id] && votedPlayers[p._id].length">
               <div class="players" v-for="player in votedPlayers[p._id]" :key="player._id">
-                <img class="player" :src="player.avatarUrl" alt="">
+                <img class="player" :src="player.avatarUrl" alt />
               </div>
             </div>
             <p>{{ p.nickName }}</p>
-            <van-button 
-            class="vote" 
-            type="primary" 
-            size="small" 
-            color="linear-gradient(to right, #4bb0ff, #6149f6)"
-            :disabled="player.voteStatus === 3 || player.voteStatus === 2 && player.votes[player.votes.length - 1] === p._id || player._id === p._id"
-            @click="onVoteChange(p)"
-            >
-              投TA
-            </van-button>
+            <van-button
+              class="vote"
+              type="primary"
+              size="small"
+              color="linear-gradient(to right, #4bb0ff, #6149f6)"
+              :disabled="player.voteStatus === 3 || player.voteStatus === 2 && player.votes[player.votes.length - 1] === p._id || player._id === p._id"
+              @click="onVoteChange(p)"
+            >投TA</van-button>
           </div>
         </li>
       </ul>
-      <van-button class="abstain" type="danger" @click="abstain" :disabled="player.voteStatus === 3">弃票</van-button>
+      <van-button
+        class="abstain"
+        type="danger"
+        @click="abstain"
+        :disabled="player.voteStatus === 3"
+      >弃票</van-button>
     </van-dialog>
 
+    <van-dialog
+      use-slot
+      title="投票结果"
+      :show-confirm-button="false"
+      :show="showResultDialog"
+    >{{ resultDialogText }}</van-dialog>
+
+    <van-dialog
+      use-slot
+      title="游戏结果"
+      :show-confirm-button="false"
+      :show="showFinishDialog"
+    >{{ finishDialogText }}</van-dialog>
   </div>
 </template>
 
@@ -72,7 +93,7 @@ export default {
   name: "Spy",
   components: {
     Seat,
-    word,
+    word
   },
   data() {
     return {
@@ -81,12 +102,15 @@ export default {
       audioSrcList: [], // 录音播放列表
       curIndex: 0, // 录音播放位置，对应玩家位置
       round: 0, // 游戏轮数：大于等于1时就每次调换头尾顺序
-      dir: 0, // 方向：0为从头到尾，1为从尾到头
       showRecordingDialog: false, // 录音弹框
       isVote: false, // 投票框
       target: "", // 投票中选择的用户id
       voteTime: 10, // 投票倒计时
-      noticeText: "",
+      showResultDialog: false,
+      resultDialogText: "",
+      showFinishDialog: false,
+      finishDialogText: "",
+      noticeText: ""
       // Info: [
       //   {
       //     id: 1,
@@ -131,9 +155,9 @@ export default {
     ...mapGetters(["players", "player", "gameState", "votedPlayers"]),
     validPlayers() {
       // return this.players.filter((p) => p.nickName !== this.player.nickName);
-      return this.players.filter((p) => p.isAlive);                                                                                                                                                                                                                                                  
+      return this.players.filter(p => p.isAlive);
       // return this.players;
-    },
+    }
   },
   methods: {
     ...mapMutations(["setCurSpeak"]),
@@ -142,13 +166,13 @@ export default {
       const toast = Toast({
         duration: 0,
         message: `离录音开始还有${time}s`,
-        selector: "#timer",
+        selector: "#timer"
       });
       this.timerCount = time;
       this.timer = setInterval(() => {
         this.timerCount--;
         toast.setData({
-          message: `离录音开始还有${this.timerCount}s`,
+          message: `离录音开始还有${this.timerCount}s`
         });
         if (this.timerCount === 0) {
           // 到达30s的时候，开始录音
@@ -172,7 +196,7 @@ export default {
       recorderManager.start({
         format: "mp3",
         sampleRate: 44100,
-        encodeBitRate: 128000,
+        encodeBitRate: 128000
       });
     },
     startRecordTimer(time) {
@@ -202,7 +226,7 @@ export default {
       Toast({
         duration: 0,
         message: "等待其他玩家录音中...",
-        selector: "#timer",
+        selector: "#timer"
       });
       // 上传录音
       let res = await this.$util.uploadAudio(filePath);
@@ -216,27 +240,22 @@ export default {
     // 播放录音状态调用的方法，包括初始化播放以及依据顺序自动播放下一个
     onPlaying() {
       // 取出每名玩家records的最新一条，组成当前的播放列表
-      this.audioSrcList = this.players.map((player) => {
-        if (player.isAlive) {
+      this.audioSrcList = this.players
+        .filter(player => player.isAlive)
+        .map(player => {
+          console.log('------------------------------------');
+          
+          console.log(player.records);
+          console.log('------------------------------------');
+          
           return {
             userId: player._id,
-            url: player.records[player.records.length - 1],
+            url: player.records[player.records.length - 1]
           };
-        }
-      });
+        });
       console.log(this.players);
       console.log(this.audioSrcList);
-      if (this.round) {
-        // 第二轮及以后每轮都反转
-        this.dir = Number(!this.dir);
-      }
-      if (this.dir === 0) {
-        // 从头到尾
-        this.curIndex = 0;
-      } else {
-        // 反过来
-        this.curIndex = this.audioSrcList.length - 1;
-      }
+      this.curIndex = 0;
       const { userId, url } = this.audioSrcList[this.curIndex];
       audio.src = url;
       this.setCurSpeak(userId);
@@ -265,7 +284,7 @@ export default {
           duration: 0,
           forbidClick: true,
           message: "开始投票",
-          selector: "#timer",
+          selector: "#timer"
         });
         return;
       }
@@ -277,7 +296,7 @@ export default {
     //投票状态调用的方法
     onVoting() {
       this.isVote = true;
-      this.voteTimer()
+      this.voteTimer();
     },
     // 投票按钮
     onVoteChange(p) {
@@ -293,13 +312,15 @@ export default {
         //   : console.log(--this.voteTime);
         this.voteTime--;
         if (this.voteTime == 0) {
-          if(this.player.voteStatus == 1){
+          if (this.player.voteStatus == 1) {
             // 若倒计时结束玩家仍未选择投票，则默认该玩家弃票
             console.log(`${this.player.nickName}选择了弃票`);
             this.$util.vote(null);
-          };
+          }
           this.isVote = false;
           clearInterval(timer);
+          this.voteTime = 10;
+          this.$util.updateGameState("preparing");
         }
       }, 1000);
       // this.$util.updateGameState("preparing");
@@ -309,15 +330,76 @@ export default {
       console.log(`${this.player.nickName}选择了弃票`);
       this.$util.vote(null);
       // this.isVote = true;
-    },
+    }
   },
   watch: {
     gameState(n) {
+      if (!this.player.isAlive) return;
       switch (n) {
         case "preparing":
           // 新一轮开始
-          this.onPreparing(3);
-          this.noticeText = this.round ? this.game.vote : "准备环节";
+          if (!this.round) {
+            // 首轮
+            this.onPreparing(3);
+            this.noticeText = "准备环节";
+          } else {
+            // 非首轮，投票结果判断
+            if (this.game.voteResult.length === 1) {
+              // 一个玩家
+              let player = this.players.find(
+                player => player._id === this.game.voteResult[0]
+              );
+              let identity = player.isSpy ? "卧底" : "平民";
+              this.resultDialogText = `${player.nickName}得票数最多被淘汰出局，TA的身份是${identity}。`;
+              if (player._id === this.userInfo._id) {
+                this.$util.updatePlayerInfo("isAlive", false);
+              }
+              // player.isAlive = false;
+              // 判断胜负
+              let activeSpies = this.players.filter(
+                player => player.isAlive && player.isSpy
+              ).length;
+              let activePlayers = this.players.filter(player => player.isAlive)
+                .length;
+              let gameEnd = !activeSpies || activeSpies * 2 === activePlayers;
+              console.log(activeSpies);
+              console.log(activePlayers);
+              
+              if (gameEnd) {
+                console.log('结束！');
+                let winner = player.isSpy ? "平民" : "卧底";
+                let winners = this.players
+                  .filter(p => (player.isSpy ? !p.isSpy : p.isSpy))
+                  .reduce((acc, cur) => `${acc}【${cur.nickName}】`, "");
+                // 游戏结束
+                setTimeout(() => {
+                  this.showFinishDialog = true;
+                  this.finishDialogText = `恭喜【${winner}】玩家${winners}获得胜利！`;
+                }, 3000);
+              } else {
+                // 游戏继续
+                this.onPreparing(3);
+              }
+            } else if (this.game.voteResult.length > 1) {
+              // 多个玩家
+              this.resultDialogText =
+                "有两个或以上玩家得票数相同，请重新投票！";
+              setTimeout(() => {
+                this.$util.updateGameState("voting");
+              }, 3000);
+            } else {
+              // 重新投
+              this.resultDialogText =
+                "本轮所有玩家弃票，无人出局，请重新投票！";
+              setTimeout(() => {
+                this.$util.updateGameState("voting");
+              }, 3000);
+            }
+            this.showResultDialog = true;
+            setTimeout(() => {
+              this.showResultDialog = false;
+            }, 3000);
+          }
           break;
         case "recording":
           this.onRecording(5);
@@ -346,19 +428,22 @@ export default {
         //   this.noticeText = this.game.voteMsg;
         //   break;
       }
-    },
+    }
   },
 
   onLoad() {
     this.onPreparing(3);
     // 录音结束后自动进行上传
-    recorderManager.onStop((res) => {
+    recorderManager.onStop(res => {
       this.uploadAudio(res.tempFilePath);
     });
     // 自动播放列表下一名玩家录音
-    audio.onEnded((res) => {
+    audio.onEnded(res => {
       this.playNext();
     });
+    let spy = this.players.find(p => p.isSpy);
+    console.log(`卧底是：【${spy.nickName}】`);
+    
     // audio.onPlay(() => {
     //   console.log("开始播放", this.curSpeak);
     // });
@@ -366,7 +451,7 @@ export default {
     //   console.log(res.errMsg);
     //   console.log(res.errCode);
     // });
-  },
+  }
 };
 </script>
 
@@ -392,12 +477,12 @@ export default {
 //       height: 50px;
 //       border-radius: 50%;
 //     }
-.voteTime{
+.voteTime {
   position: relative;
-  left:5vw;
+  left: 5vw;
 }
 
-.clock{
+.clock {
   width: 5vw;
   height: 5vw;
 }
@@ -424,13 +509,13 @@ export default {
   left: 10vw;
 }
 
-.votedPlayers{
+.votedPlayers {
   position: absolute;
-  bottom:7vw;
-  left:20vw;
+  bottom: 7vw;
+  left: 20vw;
 }
 
-.player{
+.player {
   width: 10vw;
   height: 10vw;
   border-radius: 50%;
@@ -442,14 +527,14 @@ export default {
 
 .vote {
   position: absolute;
-  right:20px;
+  right: 20px;
   bottom: 25px;
 }
 
 .abstain {
-    position: relative;;
-    top:10vw;
-    left:35vw;
-    z-index:999;
+  position: relative;
+  top: 10vw;
+  left: 35vw;
+  z-index: 999;
 }
 </style>

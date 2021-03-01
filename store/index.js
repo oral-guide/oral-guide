@@ -14,7 +14,8 @@ const store = new Vuex.Store({
         isReady: false, // 用户是否准备
         roomMsgs: [], // 等待室的语音聊天记录
         game: null, // 游戏开始后的逻辑都在game对象
-        curSpeak: ''    // 当前发言的用户id
+        curSpeak: '',    // 当前发言的用户id
+        voteResult: []
     },
     getters: {
         // curRoom(state) {
@@ -40,6 +41,22 @@ const store = new Vuex.Store({
                 }
             })
             return result;
+        },
+        voteResult: (state, getters) => {
+            let results = [];
+            let maxCount = 0;
+            let arr = Object.values(getters.votedPlayers);
+            arr.forEach(players => {
+                let count = players.length;
+                maxCount = Math.max(count, maxCount);
+            })
+            for (let i = 0; i < arr.length; i++) {
+                const players = arr[i];
+                if (players.length === maxCount) {
+                    results.push(players);
+                }
+            }
+            return results;
         },
         // msgs:(state,getters)=>{
         //     return getters.currentRoom? getters.currentRoom.msgs:null;

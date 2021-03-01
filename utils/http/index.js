@@ -89,6 +89,17 @@ async function updateGameState(state) {
         }
     })
 }
+// 更新玩家信息
+async function updatePlayerInfo(key, value) {
+    return await sendSocketMsg({
+        type: 'updatePlayerInfo',
+        data: {
+            userId: store.state.userInfo._id,
+            key,
+            value
+        }
+    })
+}
 //更新玩家records
 async function updatePlayerRecords(userId, url) {
     return await sendSocketMsg({
@@ -194,6 +205,7 @@ export default {
     updateGameState,
     uploadAudio,
     sendRoomMessage,
+    updatePlayerInfo,
     updatePlayerRecords,
     vote
 }
