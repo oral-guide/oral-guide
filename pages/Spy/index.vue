@@ -6,6 +6,7 @@
     <!-- 座位 -->
     <div class="spy_seat">
       <seat :seatInfo="players[i]" v-for="i in 8" :key="i">{{i+1}}</seat>
+      <!-- <seat :seatInfo="Info" v-for="i in 8" :key="i">{{i+1}}</seat> -->
     </div>
     <!-- 30s 倒计时 -->
     <van-toast id="timer" />
@@ -66,6 +67,7 @@ import Toast from "../../wxcomponents/vant/toast/toast";
 import { mapState, mapGetters, mapMutations } from "vuex";
 const recorderManager = uni.getRecorderManager();
 const audio = uni.createInnerAudioContext();
+audio.autoplay = true;
 
 export default {
   name: "Spy",
@@ -87,7 +89,7 @@ export default {
       target: "", // 投票中选择的用户id
       voteTime: 10, // 投票倒计时
       noticeText: "",
-      // seatInfo: [
+      // Info: [
       //   {
       //     id: 1,
       //     avatarUrl: "../static/waitRoom/avatar.jpg",
@@ -225,7 +227,7 @@ export default {
         }
       });
       console.log(this.players);
-      console.log(this.audioSrcList, this.curIndex);
+      console.log(this.audioSrcList);
       if (this.round) {
         // 第二轮及以后每轮都反转
         this.dir = Number(!this.dir);
@@ -240,8 +242,9 @@ export default {
       const { userId, url } = this.audioSrcList[this.curIndex];
       audio.src = url;
       this.setCurSpeak(userId);
-      audio.play();
-      console.log(this.curSpeak);
+      console.log(
+        `onplaying: 当前speaker ID ${this.curSpeak}, 当前序号：${this.curIndex}`
+      );
       // 改变当前玩家isSpeaking状态为true
       // this.players[this.curIndex].isSpeaking = true;
     },
@@ -256,8 +259,9 @@ export default {
       }
       if (this.curIndex === -1 || this.curIndex === this.audioSrcList.length) {
         // 9 这一轮结束，开始投票！
+        console.log("playing ends");
         this.round++;
-        this.setCurSpeak('');
+        this.setCurSpeak("");
         this.$util.updateGameState("voting");
         Toast.loading({
           duration: 0,
@@ -268,11 +272,9 @@ export default {
         return;
       }
       // audio.src = this.audioSrcList[this.curIndex].url;
-      const { userId, url } = this.audioSrcList[this.curIndex];
-      audio.src = url;
-      this.setCurSpeak(userId);
-      audio.play();
-      console.log(this.curSpeak);
+      console.log(`现在curIndex: ${this.curIndex}`);
+      audio.src = this.audioSrcList[this.curIndex].url;
+      this.setCurSpeak(this.audioSrcList[this.curIndex].userId);
     },
     //投票状态调用的方法
     onVoting() {
@@ -328,14 +330,12 @@ export default {
           // 全体录音结束
           Toast.clear();
           this.onPlaying();
-          console.log(this.curSpeak);
           this.noticeText = `当前发言玩家：【${
             this.players[this.curIndex].nickName
           }】`;
           break;
         case "voting":
           Toast.clear();
-          this.setCurSpeak("");
           console.log("voting starts");
           this.onVoting();
           this.noticeText = "投票环节";
@@ -361,6 +361,13 @@ export default {
     audio.onEnded((res) => {
       this.playNext();
     });
+    // audio.onPlay(() => {
+    //   console.log("开始播放", this.curSpeak);
+    // });
+    // audio.onError((res) => {
+    //   console.log(res.errMsg);
+    //   console.log(res.errCode);
+    // });
   },
 };
 </script>
