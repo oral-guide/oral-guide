@@ -28,7 +28,19 @@ const store = new Vuex.Store({
         },
         gameState:(state,getters)=>{
             return state.game ? state.game.state : ""
-        }
+        },
+        votedPlayers: (state, getters) => {
+            let result = {};
+            getters.players.forEach(player => {
+                // result[player._id] = [];
+                if (player.voteStatus === 2 && player.isAlive) {
+                    let targetId = player.votes[player.votes.length - 1];
+                    if (!result[targetId]) result[targetId] = [];
+                    result[targetId].push(player);
+                }
+            })
+            return result;
+        },
         // msgs:(state,getters)=>{
         //     return getters.currentRoom? getters.currentRoom.msgs:null;
         // }

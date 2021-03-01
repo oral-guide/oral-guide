@@ -53,7 +53,7 @@ async function enterRoom(params) {
     const { roomId, isOwner } = params
     return await sendSocketMsg({
         type: 'enterRoom',
-        data: { 
+        data: {
             roomId,
             isOwner
         }
@@ -90,10 +90,10 @@ async function updateGameState(state) {
     })
 }
 //更新玩家records
-async function updatePlayerRecords(userId,url){
+async function updatePlayerRecords(userId, url) {
     return await sendSocketMsg({
-        type:"updatePlayerRecords",
-        data:{
+        type: "updatePlayerRecords",
+        data: {
             userId,
             url
         }
@@ -125,18 +125,28 @@ async function sendRoomMessage(userId, url) {
         }
     })
 }
+// 收取投票结果
+async function vote(target) {
+    return await sendSocketMsg({
+        type: "vote",
+        data: {
+            userId: store.state.userInfo._id, //  投票人的id
+            target // 投的人的id
+        }
+    })
+}
 // 登录相关
 async function login() {
     let [err, { code }] = await uni.login({ provider: 'weixin' });
     if (code) {
-        let [err, res] = await uni.request({ url: 'https://humansean.com:8080/weapp/login', data: { code }});
+        let [err, res] = await uni.request({ url: 'https://humansean.com:8080/weapp/login', data: { code } });
         let cookie = res.cookies[0].split("; ")[0];
         uni.setStorageSync('cookie', cookie);
     }
 }
 async function getStatus() {
     let cookie = uni.getStorageSync('cookie');
-    let [err, { data: { data: { isLogin }}}] = (await uni.request({
+    let [err, { data: { data: { isLogin } } }] = (await uni.request({
         url: 'https://humansean.com:8080/weapp/checkLogin',
         header: {
             'Cookie': cookie
@@ -169,7 +179,6 @@ async function getUserInfo() {
     return res.data.data.userInfo;
 }
 
-
 export default {
     openWebsocket,
     sendSocketMsg,
@@ -185,5 +194,6 @@ export default {
     updateGameState,
     uploadAudio,
     sendRoomMessage,
-    updatePlayerRecords
+    updatePlayerRecords,
+    vote
 }

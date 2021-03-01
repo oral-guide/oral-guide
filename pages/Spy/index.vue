@@ -2,8 +2,6 @@
   <div class="spy">
     <!-- 通知栏 -->
     <van-notice-bar left-icon="volume-o" :text="noticeText" />
-    <!-- 投票 -->
-    <!-- <vote></vote> -->
     <word></word>
     <!-- 座位 -->
     <div class="spy_seat">
@@ -16,6 +14,47 @@
       <div class="recordMsg">录音中。。。还剩{{ timerCount }}s</div>
       <van-button color="#ff6600" block @click="endRecord()">提前结束</van-button>
     </van-popup>
+
+    <!-- 投票 -->
+    <van-dialog
+      use-slot
+      title="请投票"
+      theme="round-button"
+      :show-confirm-button="false"
+      :show="isVote"
+    >
+      <h3 class="voteTime">
+        <img class="clock" src="../../static/spy/clock.png" alt="">
+        {{ voteTime }}s
+      </h3>
+      <ul>
+        <li v-for="(p, i) in validPlayers" :key="i" style="margin: 10px">
+          <div class="target">
+            <img class="choosePlayers" :src="p.avatarUrl" alt="">
+            <img v-if="p.voteStatus === 2" class="voted" src="../../static/spy/tick.png" alt="">
+            <img v-if="p.voteStatus === 3" class="abstained" src="../../static/spy/abstained.png" alt="">
+            <div class="votedPlayers" v-if="votedPlayers[p._id] && votedPlayers[p._id].length">
+              <div class="players" v-for="player in votedPlayers[p._id]" :key="player._id">
+                <img class="player" :src="player.avatarUrl" alt="">
+              </div>
+            </div>
+            <p>{{ p.nickName }}</p>
+            <van-button 
+            class="vote" 
+            type="primary" 
+            size="small" 
+            color="linear-gradient(to right, #4bb0ff, #6149f6)"
+            :disabled="player.voteStatus === 3 || player.voteStatus === 2 && player.votes[player.votes.length - 1] === p._id || player._id === p._id"
+            @click="onVoteChange(p)"
+            >
+              投TA
+            </van-button>
+          </div>
+        </li>
+      </ul>
+      <van-button class="abstain" type="danger" @click="abstain" :disabled="player.voteStatus === 3">弃票</van-button>
+    </van-dialog>
+
   </div>
 </template>
 
@@ -44,6 +83,9 @@ export default {
       round: 0, // 游戏轮数：大于等于1时就每次调换头尾顺序
       dir: 0, // 方向：0为从头到尾，1为从尾到头
       showRecordingDialog: false, // 录音弹框
+      isVote: false, // 投票框
+      target: "", // 投票中选择的用户id
+      voteTime: 10, // 投票倒计时
       noticeText: "",
       // seatInfo: [
       //   {
@@ -86,7 +128,12 @@ export default {
   },
   computed: {
     ...mapState(["game", "room", "isOwner", "userInfo", "curSpeak"]),
-    ...mapGetters(["players", "player", "gameState"]),
+    ...mapGetters(["players", "player", "gameState", "votedPlayers"]),
+    validPlayers() {
+      // return this.players.filter((p) => p.nickName !== this.player.nickName);
+      return this.players.filter((p) => p.isAlive);                                                                                                                                                                                                                                                  
+      // return this.players;
+    },
   },
   methods: {
     ...mapMutations(["setCurSpeak"]),
@@ -177,6 +224,7 @@ export default {
           };
         }
       });
+      console.log(this.players);
       console.log(this.audioSrcList, this.curIndex);
       if (this.round) {
         // 第二轮及以后每轮都反转
@@ -209,6 +257,7 @@ export default {
       if (this.curIndex === -1 || this.curIndex === this.audioSrcList.length) {
         // 9 这一轮结束，开始投票！
         this.round++;
+        this.setCurSpeak('');
         this.$util.updateGameState("voting");
         Toast.loading({
           duration: 0,
@@ -224,6 +273,42 @@ export default {
       this.setCurSpeak(userId);
       audio.play();
       console.log(this.curSpeak);
+    },
+    //投票状态调用的方法
+    onVoting() {
+      this.isVote = true;
+      this.voteTimer()
+    },
+    // 投票按钮
+    onVoteChange(p) {
+      console.log(`${this.player.nickName}选择了${p._id}`);
+      console.log(p);
+      this.$util.vote(p._id);
+    },
+    // 投票倒计时
+    voteTimer() {
+      let timer = setInterval(() => {
+        // this.voteTime === 0
+        //   ? clearInterval(timer)
+        //   : console.log(--this.voteTime);
+        this.voteTime--;
+        if (this.voteTime == 0) {
+          if(this.player.voteStatus == 1){
+            // 若倒计时结束玩家仍未选择投票，则默认该玩家弃票
+            console.log(`${this.player.nickName}选择了弃票`);
+            this.$util.vote(null);
+          };
+          this.isVote = false;
+          clearInterval(timer);
+        }
+      }, 1000);
+      // this.$util.updateGameState("preparing");
+    },
+    // 选择弃票
+    abstain() {
+      console.log(`${this.player.nickName}选择了弃票`);
+      this.$util.vote(null);
+      // this.isVote = true;
     },
   },
   watch: {
@@ -252,9 +337,9 @@ export default {
           Toast.clear();
           this.setCurSpeak("");
           console.log("voting starts");
-        //   this.onVoting();
-        //   this.noticeText = "投票环节";
-        //   break;
+          this.onVoting();
+          this.noticeText = "投票环节";
+          break;
         // case "revoting":
         //   this.onVoting();
         //   break;
@@ -295,5 +380,71 @@ export default {
     flex-direction: column;
     flex-wrap: wrap;
   }
+}
+
+// img {
+//       width: 50px;
+//       height: 50px;
+//       border-radius: 50%;
+//     }
+.voteTime{
+  position: relative;
+  left:5vw;
+}
+
+.clock{
+  width: 5vw;
+  height: 5vw;
+}
+
+.choosePlayers {
+  width: 20vw;
+  height: 20vw;
+  border-radius: 50%;
+}
+
+.voted {
+  width: 10vw;
+  height: 10vw;
+  position: absolute;
+  top: -5vw;
+  left: 10vw;
+}
+
+.abstained {
+  width: 10vw;
+  height: 5vw;
+  position: absolute;
+  top: -1vw;
+  left: 10vw;
+}
+
+.votedPlayers{
+  position: absolute;
+  bottom:7vw;
+  left:20vw;
+}
+
+.player{
+  width: 10vw;
+  height: 10vw;
+  border-radius: 50%;
+}
+
+.target {
+  position: relative;
+}
+
+.vote {
+  position: absolute;
+  right:20px;
+  bottom: 25px;
+}
+
+.abstain {
+    position: relative;;
+    top:10vw;
+    left:35vw;
+    z-index:999;
 }
 </style>
