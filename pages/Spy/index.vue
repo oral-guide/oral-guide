@@ -61,7 +61,6 @@
 
 <script>
 import Seat from "../../components/spySeat";
-import vote from "../../components/vote";
 import word from "../../components/word";
 import Toast from "../../wxcomponents/vant/toast/toast";
 import { mapState, mapGetters, mapMutations } from "vuex";
@@ -73,7 +72,6 @@ export default {
   name: "Spy",
   components: {
     Seat,
-    vote,
     word,
   },
   data() {
