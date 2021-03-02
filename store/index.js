@@ -11,7 +11,7 @@ const store = new Vuex.Store({
         room: null, // 当前房间
         roomId: 0,   // 当前房间id
         isOwner: false,   // 用户是否为当前房间房主
-        isReady: false, // 用户是否准备
+        isReady: false, // 用户是否准备[]
         roomMsgs: [], // 等待室的语音聊天记录
         game: null, // 游戏开始后的逻辑都在game对象
         curSpeak: '',    // 当前发言的用户id
@@ -29,6 +29,9 @@ const store = new Vuex.Store({
         },
         gameState:(state,getters)=>{
             return state.game ? state.game.state : ""
+        },
+        word: (state, getters) => {
+            return getters.player.isSpy ? state.game.words[0] : state.game.words[1];
         },
         votedPlayers: (state, getters) => {
             let result = {};

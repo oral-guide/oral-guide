@@ -1,19 +1,26 @@
 <template>
   <div class="spy">
     <!-- 通知栏 -->
-    <van-notice-bar left-icon="volume-o" :text="noticeText" />
-    <word></word>
+    <van-notice-bar color="#ff4101" left-icon="volume-o" :text="noticeText" />
+    <word :showWord="showWord" @toggleShow="showWord = !showWord"></word>
     <!-- 座位 -->
     <div class="spy_seat">
-      <seat :seatInfo="players[i]" v-for="i in 8" :key="i">{{i+1}}</seat>
+      <seat :seatInfo="players[i]" v-for="i in 8" :key="i">{{ i + 1 }}</seat>
       <!-- <seat :seatInfo="Info" v-for="i in 8" :key="i">{{i+1}}</seat> -->
     </div>
     <!-- 30s 倒计时 -->
     <van-toast id="timer" />
     <!-- 录音倒计时 -->
-    <van-popup :show="showRecordingDialog" :round="true" :close-on-click-overlay="false">
-      <div class="recordMsg">录音中。。。还剩{{ timerCount }}s</div>
-      <van-button color="#ff6600" block @click="endRecord()">提前结束</van-button>
+    <van-popup
+      :show="showRecordingDialog"
+      :close-on-click-overlay="false"
+      :overlay="false"
+      position="bottom"
+    >
+      <!-- <div class="recordMsg">录音中。。。还剩{{ timerCount }}s</div> -->
+      <van-button color="#ff6600" block @click="endRecord()">
+        提前结束
+      </van-button>
     </van-popup>
 
     <!-- 投票 -->
@@ -22,46 +29,67 @@
       title="请投票"
       theme="round-button"
       :show-confirm-button="false"
-      :show="isVote"
+      :show="showVoteDialog"
     >
       <h3 class="voteTime">
-        <img class="clock" src="../../static/spy/clock.png" alt />
-        {{ voteTime }}s
+        <van-icon name="../../../static/spy/clock.png"></van-icon>
+        <span class="clock">{{ voteTime }}s</span>
       </h3>
       <ul>
         <li v-for="(p, i) in validPlayers" :key="i" style="margin: 10px">
           <div class="target">
             <img class="choosePlayers" :src="p.avatarUrl" alt />
-            <img v-if="p.voteStatus === 2" class="voted" src="../../static/spy/tick.png" alt />
+            <img
+              v-if="p.voteStatus === 2"
+              class="voted"
+              src="../../static/spy/tick.png"
+              alt
+            />
             <img
               v-if="p.voteStatus === 3"
               class="abstained"
               src="../../static/spy/abstained.png"
               alt
             />
-            <div class="votedPlayers" v-if="votedPlayers[p._id] && votedPlayers[p._id].length">
-              <div class="players" v-for="player in votedPlayers[p._id]" :key="player._id">
+            <div
+              class="votedPlayers"
+              v-if="votedPlayers[p._id] && votedPlayers[p._id].length"
+            >
+              <div
+                class="players"
+                v-for="player in votedPlayers[p._id]"
+                :key="player._id"
+              >
                 <img class="player" :src="player.avatarUrl" alt />
               </div>
             </div>
-            <p>{{ p.nickName }}</p>
+            <p class="name">{{ p.nickName }}</p>
             <van-button
               class="vote"
               type="primary"
               size="small"
               color="linear-gradient(to right, #4bb0ff, #6149f6)"
-              :disabled="player.voteStatus === 3 || player.voteStatus === 2 && player.votes[player.votes.length - 1] === p._id || player._id === p._id"
+              :disabled="
+                player.voteStatus === 3 ||
+                (player.voteStatus === 2 &&
+                  player.votes[player.votes.length - 1] === p._id) ||
+                player._id === p._id
+              "
               @click="onVoteChange(p)"
-            >投TA</van-button>
+            >
+              投TA
+            </van-button>
           </div>
         </li>
       </ul>
       <van-button
         class="abstain"
         type="danger"
+        size="large"
         @click="abstain"
         :disabled="player.voteStatus === 3"
-      >弃票</van-button>
+        >弃票</van-button
+      >
     </van-dialog>
 
     <van-dialog
@@ -69,14 +97,22 @@
       title="投票结果"
       :show-confirm-button="false"
       :show="showResultDialog"
-    >{{ resultDialogText }}</van-dialog>
+    >
+      <div class="content">
+        {{ resultDialogText }}
+      </div>
+    </van-dialog>
 
     <van-dialog
       use-slot
       title="游戏结果"
       :show-confirm-button="false"
       :show="showFinishDialog"
-    >{{ finishDialogText }}</van-dialog>
+    >
+      <div class="content">
+        {{ finishDialogText }}
+      </div>
+    </van-dialog>
   </div>
 </template>
 
@@ -93,7 +129,7 @@ export default {
   name: "Spy",
   components: {
     Seat,
-    word
+    word,
   },
   data() {
     return {
@@ -103,76 +139,39 @@ export default {
       curIndex: 0, // 录音播放位置，对应玩家位置
       round: 0, // 游戏轮数：大于等于1时就每次调换头尾顺序
       showRecordingDialog: false, // 录音弹框
-      isVote: false, // 投票框
+      showVoteDialog: false, // 投票框
       target: "", // 投票中选择的用户id
       voteTime: 10, // 投票倒计时
       showResultDialog: false,
       resultDialogText: "",
       showFinishDialog: false,
       finishDialogText: "",
-      noticeText: ""
-      // Info: [
-      //   {
-      //     id: 1,
-      //     avatarUrl: "../static/waitRoom/avatar.jpg",
-      //     nickName: "珍珠",
-      //     isAlive: true,
-      //     isSpeaking: false,
-      //   },
-      //   {
-      //     id: 2,
-      //     avatarUrl: "../static/waitRoom/avatar.jpg",
-      //     nickName: "奶盖",
-      //     isAlive: true,
-      //     isSpeaking: true,
-      //   },
-      //   {
-      //     id: 3,
-      //     avatarUrl: "../static/waitRoom/avatar.jpg",
-      //     nickName: "茉莉",
-      //     isAlive: false,
-      //     isSpeaking: false,
-      //   },
-      //   {
-      //     id: 4,
-      //     avatarUrl: "../static/waitRoom/avatar.jpg",
-      //     nickName: "花茶",
-      //     isAlive: true,
-      //     isSpeaking: true,
-      //   },
-      //      {
-      //     id:5,
-      //     avatarUrl: "../static/waitRoom/avatar.jpg",
-      //     nickName: "多肉",
-      //     isAlive: true,
-      //     isSpeaking: true,
-      //   }
-      // ],
+      noticeText: "",
+      showWord: false,
     };
   },
   computed: {
     ...mapState(["game", "room", "isOwner", "userInfo", "curSpeak"]),
-    ...mapGetters(["players", "player", "gameState", "votedPlayers"]),
+    ...mapGetters(["players", "player", "gameState", "word", "votedPlayers"]),
     validPlayers() {
-      // return this.players.filter((p) => p.nickName !== this.player.nickName);
-      return this.players.filter(p => p.isAlive);
-      // return this.players;
-    }
+      return this.players.filter((p) => p.isAlive);
+    },
   },
   methods: {
     ...mapMutations(["setCurSpeak"]),
     // 准备状态调用的方法，展示倒计时等
     onPreparing(time) {
+      this.noticeText = "准备阶段";
       const toast = Toast({
         duration: 0,
         message: `离录音开始还有${time}s`,
-        selector: "#timer"
+        selector: "#timer",
       });
       this.timerCount = time;
       this.timer = setInterval(() => {
         this.timerCount--;
         toast.setData({
-          message: `离录音开始还有${this.timerCount}s`
+          message: `离录音开始还有${this.timerCount}s`,
         });
         if (this.timerCount === 0) {
           // 到达30s的时候，开始录音
@@ -180,7 +179,9 @@ export default {
           Toast.clear();
           // 全体开始录音
           console.log("recording starts");
-          this.$util.updateGameState("recording");
+          if (this.player.isAlive) {
+            this.$util.updateGameState("recording");
+          }
         }
       }, 1000);
     },
@@ -196,19 +197,25 @@ export default {
       recorderManager.start({
         format: "mp3",
         sampleRate: 44100,
-        encodeBitRate: 128000
+        encodeBitRate: 128000,
       });
     },
     startRecordTimer(time) {
       this.showRecordingDialog = true;
       this.timerCount = time;
+      const toast = Toast({
+        duration: 0,
+        position: "top",
+        message: `录音中。。。还剩${this.timerCount}s`,
+        selector: "#timer",
+      });
       this.timer = setInterval(() => {
         this.timerCount--;
+        toast.setData({
+          message: `录音中。。。还剩${this.timerCount}s`,
+        });
         if (this.timerCount === 0) {
           // 时间到，强制结束录音并上传
-          console.log("time is up");
-          clearInterval(this.timer);
-          this.showRecordingDialog = false;
           this.endRecord();
         }
       }, 1000);
@@ -217,6 +224,7 @@ export default {
     endRecord() {
       clearInterval(this.timer);
       this.showRecordingDialog = false;
+      Toast.clear();
       recorderManager.stop();
       // this.showRecordingDialog = false;
     },
@@ -226,7 +234,7 @@ export default {
       Toast({
         duration: 0,
         message: "等待其他玩家录音中...",
-        selector: "#timer"
+        selector: "#timer",
       });
       // 上传录音
       let res = await this.$util.uploadAudio(filePath);
@@ -241,20 +249,15 @@ export default {
     onPlaying() {
       // 取出每名玩家records的最新一条，组成当前的播放列表
       this.audioSrcList = this.players
-        .filter(player => player.isAlive)
-        .map(player => {
-          console.log('------------------------------------');
-          
-          console.log(player.records);
-          console.log('------------------------------------');
-          
+        .filter((player) => player.isAlive)
+        .map((player) => {
           return {
             userId: player._id,
-            url: player.records[player.records.length - 1]
+            url: player.records[player.records.length - 1],
           };
         });
-      console.log(this.players);
-      console.log(this.audioSrcList);
+      // console.log(this.players);
+      // console.log(this.audioSrcList);
       this.curIndex = 0;
       const { userId, url } = this.audioSrcList[this.curIndex];
       audio.src = url;
@@ -262,32 +265,34 @@ export default {
       console.log(
         `onplaying: 当前speaker ID ${this.curSpeak}, 当前序号：${this.curIndex}`
       );
+      this.noticeText = `当前发言玩家：【${
+        this.players[this.curIndex].nickName
+      }】`;
       // 改变当前玩家isSpeaking状态为true
       // this.players[this.curIndex].isSpeaking = true;
     },
     // 根据方向，顺或反播放下一个玩家的录音
     playNext() {
-      if (this.dir === 0) {
-        // 从头到尾
-        this.curIndex++;
-      } else {
-        // 反过来
-        this.curIndex--;
-      }
-      if (this.curIndex === -1 || this.curIndex === this.audioSrcList.length) {
-        // 9 这一轮结束，开始投票！
+      this.curIndex++;
+      if (this.curIndex === this.audioSrcList.length) {
+        // 这一轮结束，开始投票！
         console.log("playing ends");
         this.round++;
         this.setCurSpeak("");
-        this.$util.updateGameState("voting");
+        if (this.player.isAlive) {
+          this.$util.updateGameState("voting");
+        }
         Toast.loading({
           duration: 0,
           forbidClick: true,
           message: "开始投票",
-          selector: "#timer"
+          selector: "#timer",
         });
         return;
       }
+      this.noticeText = `当前发言玩家：【${
+        this.players[this.curIndex].nickName
+      }】`;
       // audio.src = this.audioSrcList[this.curIndex].url;
       console.log(`现在curIndex: ${this.curIndex}`);
       audio.src = this.audioSrcList[this.curIndex].url;
@@ -295,21 +300,16 @@ export default {
     },
     //投票状态调用的方法
     onVoting() {
-      this.isVote = true;
-      this.voteTimer();
+      this.showVoteDialog = true;
+      this.startVoteTimer();
     },
     // 投票按钮
     onVoteChange(p) {
-      console.log(`${this.player.nickName}选择了${p._id}`);
-      console.log(p);
       this.$util.vote(p._id);
     },
     // 投票倒计时
-    voteTimer() {
+    startVoteTimer() {
       let timer = setInterval(() => {
-        // this.voteTime === 0
-        //   ? clearInterval(timer)
-        //   : console.log(--this.voteTime);
         this.voteTime--;
         if (this.voteTime == 0) {
           if (this.player.voteStatus == 1) {
@@ -317,24 +317,24 @@ export default {
             console.log(`${this.player.nickName}选择了弃票`);
             this.$util.vote(null);
           }
-          this.isVote = false;
+          this.showVoteDialog = false;
           clearInterval(timer);
           this.voteTime = 10;
-          this.$util.updateGameState("preparing");
+          if (this.player.isAlive) {
+            this.$util.updateGameState("preparing");
+          }
         }
       }, 1000);
-      // this.$util.updateGameState("preparing");
     },
     // 选择弃票
     abstain() {
       console.log(`${this.player.nickName}选择了弃票`);
       this.$util.vote(null);
-      // this.isVote = true;
-    }
+    },
   },
   watch: {
     gameState(n) {
-      if (!this.player.isAlive) return;
+      if (!this.player.isAlive && n === "recording") return;
       switch (n) {
         case "preparing":
           // 新一轮开始
@@ -347,29 +347,41 @@ export default {
             if (this.game.voteResult.length === 1) {
               // 一个玩家
               let player = this.players.find(
-                player => player._id === this.game.voteResult[0]
+                (player) => player._id === this.game.voteResult[0]
               );
               let identity = player.isSpy ? "卧底" : "平民";
               this.resultDialogText = `${player.nickName}得票数最多被淘汰出局，TA的身份是${identity}。`;
+              this.showResultDialog = true;
+              setTimeout(() => {
+                this.showResultDialog = false;
+              }, 3000);
+
+              player.isAlive = false;
               if (player._id === this.userInfo._id) {
                 this.$util.updatePlayerInfo("isAlive", false);
+                // @TODO 死掉玩家显示dialog，选择退出房间或继续观战
+                setTimeout(() => {
+                  this.showDeadDialog = true;
+                  
+                }, 3000);
+                return;
               }
-              // player.isAlive = false;
               // 判断胜负
               let activeSpies = this.players.filter(
-                player => player.isAlive && player.isSpy
+                (player) => player.isAlive && player.isSpy
               ).length;
-              let activePlayers = this.players.filter(player => player.isAlive)
-                .length;
+              let activePlayers = this.players.filter(
+                (player) => player.isAlive
+              ).length;
               let gameEnd = !activeSpies || activeSpies * 2 === activePlayers;
               console.log(activeSpies);
               console.log(activePlayers);
-              
+
               if (gameEnd) {
-                console.log('结束！');
+                console.log("结束！");
                 let winner = player.isSpy ? "平民" : "卧底";
                 let winners = this.players
-                  .filter(p => (player.isSpy ? !p.isSpy : p.isSpy))
+                  .filter((p) => (player.isSpy ? !p.isSpy : p.isSpy))
                   .reduce((acc, cur) => `${acc}【${cur.nickName}】`, "");
                 // 游戏结束
                 setTimeout(() => {
@@ -384,66 +396,61 @@ export default {
               // 多个玩家
               this.resultDialogText =
                 "有两个或以上玩家得票数相同，请重新投票！";
+              this.showResultDialog = true;
               setTimeout(() => {
-                this.$util.updateGameState("voting");
+                if (this.player.isAlive) {
+                  this.$util.updateGameState("voting");
+                }
               }, 3000);
             } else {
               // 重新投
               this.resultDialogText =
                 "本轮所有玩家弃票，无人出局，请重新投票！";
+              this.showResultDialog = true;
               setTimeout(() => {
-                this.$util.updateGameState("voting");
+                if (this.player.isAlive) {
+                  this.$util.updateGameState("voting");
+                }
               }, 3000);
             }
-            this.showResultDialog = true;
-            setTimeout(() => {
-              this.showResultDialog = false;
-            }, 3000);
           }
           break;
         case "recording":
           this.onRecording(5);
-          console.log(this.gameState);
-          this.noticeText = "全体录音中。。。";
+          // console.log(this.gameState);
+          this.noticeText = "全体录音中";
           break;
         case "playing":
           // 全体录音结束
+          this.showWord = false;
           Toast.clear();
           this.onPlaying();
-          this.noticeText = `当前发言玩家：【${
-            this.players[this.curIndex].nickName
-          }】`;
           break;
         case "voting":
+          this.showWord = false;
           Toast.clear();
           console.log("voting starts");
           this.onVoting();
           this.noticeText = "投票环节";
           break;
-        // case "revoting":
-        //   this.onVoting();
-        //   break;
-        // case "ending":
-        //   this.onEnding();
-        //   this.noticeText = this.game.voteMsg;
-        //   break;
       }
-    }
+    },
   },
 
   onLoad() {
+    this.showWord = true;
     this.onPreparing(3);
     // 录音结束后自动进行上传
-    recorderManager.onStop(res => {
+    recorderManager.onStop((res) => {
       this.uploadAudio(res.tempFilePath);
     });
     // 自动播放列表下一名玩家录音
-    audio.onEnded(res => {
+    audio.onEnded((res) => {
       this.playNext();
     });
-    let spy = this.players.find(p => p.isSpy);
+    let spy = this.players.find((p) => p.isSpy);
     console.log(`卧底是：【${spy.nickName}】`);
-    
+    console.log(this.game);
     // audio.onPlay(() => {
     //   console.log("开始播放", this.curSpeak);
     // });
@@ -451,7 +458,7 @@ export default {
     //   console.log(res.errMsg);
     //   console.log(res.errCode);
     // });
-  }
+  },
 };
 </script>
 
@@ -483,14 +490,17 @@ export default {
 }
 
 .clock {
-  width: 5vw;
-  height: 5vw;
+  vertical-align: 1px;
 }
 
 .choosePlayers {
-  width: 20vw;
-  height: 20vw;
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
+}
+.name {
+  width: 60px;
+  text-align: center;
 }
 
 .voted {
@@ -527,14 +537,23 @@ export default {
 
 .vote {
   position: absolute;
-  right: 20px;
-  bottom: 25px;
+  right: 0px;
+  top: 50%;
+  transform: translateY(-50%);
 }
 
 .abstain {
   position: relative;
-  top: 10vw;
-  left: 35vw;
   z-index: 999;
+}
+.content {
+  padding: 20px;
+}
+
+::v-deep
+  .dialog-index--van-dialog__footer--round-button.van-goods-action.van-goods-action.van-goods-action--safe.van-goods-action--safe {
+  width: 0;
+  height: 0;
+  padding: 0 !important;
 }
 </style>
