@@ -398,6 +398,9 @@ export default {
                 "有两个或以上玩家得票数相同，请重新投票！";
               this.showResultDialog = true;
               setTimeout(() => {
+                this.showResultDialog = false;
+              }, 3000);
+              setTimeout(() => {
                 if (this.player.isAlive) {
                   this.$util.updateGameState("voting");
                 }
@@ -407,6 +410,9 @@ export default {
               this.resultDialogText =
                 "本轮所有玩家弃票，无人出局，请重新投票！";
               this.showResultDialog = true;
+              setTimeout(() => {
+                this.showResultDialog = false;
+              }, 3000);
               setTimeout(() => {
                 if (this.player.isAlive) {
                   this.$util.updateGameState("voting");
@@ -438,6 +444,7 @@ export default {
   },
 
   onLoad() {
+    this.setCurSpeak("");
     this.showWord = true;
     this.onPreparing(3);
     // 录音结束后自动进行上传
@@ -450,7 +457,6 @@ export default {
     });
     let spy = this.players.find((p) => p.isSpy);
     console.log(`卧底是：【${spy.nickName}】`);
-    console.log(this.game);
     // audio.onPlay(() => {
     //   console.log("开始播放", this.curSpeak);
     // });
