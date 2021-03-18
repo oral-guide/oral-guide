@@ -1,5 +1,5 @@
 <template>
-  <!-- 游戏大厅 -->
+  <!-- 谁是卧底·游戏大厅 -->
   <div class="hall">
     <van-skeleton title row="3"	:loading="!isLoaded">
       <!-- 创建房间 -->

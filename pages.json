@@ -25,6 +25,12 @@
 			}
 		},
 		{
+			"path": "pages/beforeGame/index",
+			"style": {
+				"navigationBarTitleText": ""
+			}
+		},
+		{
 			"path": "pages/myFriend/index",
 			"style": {
 				"navigationBarTitleText": "通讯录"
