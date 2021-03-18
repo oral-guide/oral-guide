@@ -15,7 +15,7 @@
         <div v-if="seatInfo.voteStatus" class="vote_status">
           <img v-if="seatInfo.voteStatus===1" src="../static/spy/voting.png" alt />
           <img v-else-if="seatInfo.voteStatus===2" src="../static/spy/voted.png" alt />
-          <img v-else src="../static/spy/abstained.png" alt />
+          <img v-else src="../static/spy/abstained2.png" alt />
         </div>
         <!-- 发言 -->
         <img v-if="curSpeak===seatInfo._id" class="speaker" src="../static/spy/speaking.png" alt />

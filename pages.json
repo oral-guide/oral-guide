@@ -75,6 +75,8 @@
 			"van-notify": "/wxcomponents/vant/notify/index",
 			"van-empty": "/wxcomponents/vant/empty/index",
 			"van-loading": "/wxcomponents/vant/loading/index",
+			"van-tag": "/wxcomponents/vant/tag/index",
+			"van-divider": "/wxcomponents/vant/divider/index",
 			"van-skeleton": "/wxcomponents/vant/skeleton/index"
 		}
 	},

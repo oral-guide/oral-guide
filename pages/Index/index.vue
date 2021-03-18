@@ -1,7 +1,7 @@
 <template>
   <!-- tabbar-首页 -->
   <div class="index">
-    <van-skeleton title row="3"	:loading="!isLoaded">
+    <van-skeleton title row="3" :loading="!isLoaded">
       <div
         class="index_game"
         v-for="(item, i) in gameList"
@@ -26,13 +26,13 @@
 </template>
 
 <script>
-import { mapState } from 'vuex';
+import { mapState } from "vuex";
 export default {
   name: "Index",
   data() {
     return {
       showAuth: false,
-      isLoaded: false,  // 页面数据是否加载完毕
+      isLoaded: false, // 页面数据是否加载完毕
       // 游戏列表
       gameList: [
         {
@@ -47,7 +47,7 @@ export default {
     };
   },
   computed: {
-    ...mapState(['userInfo'])
+    ...mapState(["userInfo"]),
   },
   methods: {
     getUserInfo(event) {
@@ -68,15 +68,12 @@ export default {
     },
   },
   watch: {
-    userInfo() {
-      this.isLoaded = true
-    }
-  },
-  async onLoad() {
-    let [err, res] = await uni.authorize({ scope: "scope.userInfo" });
-    if (err) {
-      this.showAuth = true;
-    }
+    userInfo(n) {
+      this.isLoaded = true;
+      if (!n.nickName) {
+        this.showAuth = true;
+      }
+    },
   },
 };
 </script>

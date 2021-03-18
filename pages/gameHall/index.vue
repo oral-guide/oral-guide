@@ -97,7 +97,7 @@ export default {
       isEnter: false,  // 加入房间对话框状态
       // 即将创建房间的信息
       roomInfo: {
-        name: '',
+        name: '猜猜谁才是卧底！',
         pswd: '',
         seats: 8
       },

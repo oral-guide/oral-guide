@@ -4,7 +4,14 @@ const {
 } = require('./mongo.js');
 const process = require('process');
 process.on('uncaughtException', err => {
+    console.log('~~~~~~~~~~~~~~~~~~~~~~');
+    console.log('~~~~~~~~~~~~~~~~~~~~~~');
+    console.log(new Date().toLocaleString());
+    console.log('~~~~~~~~~~~~~~~~~~~~~~');
+    console.log('~~~~~~~~~~~~~~~~~~~~~~');
     console.error(err && err.stack)
+    console.log('~~~~~~~~~~~~~~~~~~~~~~');
+    console.log('~~~~~~~~~~~~~~~~~~~~~~');
 });
 // WebSocket的逻辑
 
@@ -46,8 +53,6 @@ function connect(msg, ws) {
     ws.hallType = hall;
 
     ws.userInfo = userInfo;
-    console.log('userInfo: ', userInfo);
-    console.log('hall: ', hall);
     userMap[userInfo._id] = ws;
     notify(ws, {
         type: 'log',
@@ -55,7 +60,7 @@ function connect(msg, ws) {
             msg: '打开websocket成功！',
         }
     })
-    console.log('用户上线: ', userInfo._id);
+    console.log(`用户【${userInfo.nickName || userInfo._id}】上线了。`);
     updateRooms(0, hall, ws);
 }
 
@@ -257,7 +262,6 @@ function toggleReady(msg, ws) {
     } = ws;
     let room = rooms[hallType][roomId];
     let player = room.players.find(player => player._id === userInfo._id);
-    console.log(player);
     player.isReady = !isReady;
     updateRooms(1, '', room);
     notify(ws, {
@@ -309,7 +313,7 @@ function sendRoomMessage(msg, ws) {
     })
 }
 
-function initializeGame(msg, ws) {
+async function initializeGame(msg, ws) {
     // msg = {
     //     type: "initializeGame",
     // }
@@ -318,12 +322,8 @@ function initializeGame(msg, ws) {
         hallType
     } = ws;
     let room = rooms[hallType][roomId];
-    // 1. 执行页面跳转
-    roomBroadcast(room, {
-        type: 'initializeGame',
-    })
-    // 2. 更新全局game对象
-    let game = startSpyGame(room);
+    // 1. 更新全局game对象
+    let game = await startSpyGame(room);
     room.game = game;
     roomBroadcast(room, {
         type: 'update',
@@ -332,13 +332,19 @@ function initializeGame(msg, ws) {
             game
         }
     })
-
+    // 2. 执行页面跳转
+    roomBroadcast(room, {
+        type: 'initializeGame',
+    })
     roomBroadcast(room, {
         type: 'log',
         data: {
             msg: '游戏开始！！！'
         }
     })
+    let playerInfo = game.players.reduce((acc, cur) => `${acc} 【${cur.nickName}】`, '');
+    console.log(playerInfo);
+    console.log(`房间【${room.roomId}】的游戏开始了！玩家有${playerInfo}`);
 }
 
 // 游戏相关
@@ -357,7 +363,10 @@ async function startSpyGame(room) {
         })
     players.setSpy(); // 设置卧底（4-6一个，7-8两个）
     let allWords = await mongodb.col('words').find().toArray();
-    let words = allWords[Math.floor(allWords.length * Math.random())];
+    let words = allWords[Math.floor(allWords.length * Math.random())].words;
+    if (Math.random() > 0.5) {
+        words.reverse();
+    }
     let game = {
         state: "preparing",
         players,
@@ -368,7 +377,8 @@ async function startSpyGame(room) {
         activeSpies() {
             return this.players.filter(player => player.isAlive && player.isSpy).length;
         },
-        finishCount: 0
+        finishCount: 0,
+        voteResult: []
     }
     return game;
 }
@@ -389,21 +399,130 @@ function updateGameState(msg, ws) {
 
 
     room.game.finishCount++;
+    let {
+        state
+    } = msg.data;
+    console.log(`finishCount++, 从${room.game.state}转变为${state}`);
+
     if (room.game.finishCount === room.game.activePlayers()) {
         // 全部玩家准备好，可以更改状态了
         let {
             state
         } = msg.data;
-        room.game.state = state
+        console.log(`房间【${room.roomId}】的state将从[${room.game.state}]改为[${state}]`);
+        room.game.state = state;
         room.game.finishCount = 0;
-        roomBroadcast(target, { // 此时target即room
+
+        if (state === 'voting') {
+            // 投票开始了
+            room.game.players.forEach(player => {
+                player.voteStatus = 1;
+            })
+            roomBroadcast(room, {
+                type: 'updateGame',
+                key: 'players',
+                data: {
+                    players: room.game.players
+                }
+            });
+        }
+        if (state === 'preparing') {
+            // 投票结束了
+            
+            console.log('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~');
+            console.log('投票结束啦！！！！！！！！！！！！');
+            console.log('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~');
+            // 求投票结果
+            let votedPlayers = {};
+            let voteResult = [];
+            room.game.players.forEach(player => {
+                if (player.voteStatus === 2 && player.isAlive) {
+                    let targetId = player.votes[player.votes.length - 1];
+                    if (!votedPlayers[targetId]) votedPlayers[targetId] = [];
+                    votedPlayers[targetId].push(player);
+                }
+            })
+            let maxCount = 0;
+            let arr = Object.keys(votedPlayers);
+            arr.forEach(player => {
+                let count = votedPlayers[player].length;
+                maxCount = Math.max(count, maxCount);
+            })
+            for (let i = 0; i < arr.length; i++) {
+                const player = arr[i];
+                if (votedPlayers[player].length === maxCount) {
+                    voteResult.push(player);
+                }
+            }
+            console.log(votedPlayers);
+            console.log(voteResult);
+            
+            roomBroadcast(room, {
+                type: 'updateGame',
+                key: 'voteResult',
+                data: {
+                    voteResult
+                }
+            });
+            room.game.players.forEach(player => {
+                player.voteStatus = 0;
+            })
+            roomBroadcast(room, {
+                type: 'updateGame',
+                key: 'players',
+                data: {
+                    players: room.game.players
+                }
+            });
+            roomBroadcast(room, {
+                type: 'updateGame',
+                key: 'state',
+                data: {
+                    state: 'preparing'
+                }
+            });
+            
+
+            // if (room.game.voteResult.length === room.game.activePlayers()) {
+            //     // 收集到所有active玩家的投票结果后
+            //     room.game.targetPlayer = room.game.voteResult.findMostOccurence("target");
+            //     room.game.voteResult = [];
+            //     if (room.game.targetPlayer.length === 1) {
+            //         // 投出一名玩家，该轮结束
+            //         let player = room.game.players.find(player => player.name === room.game.targetPlayer[0]);
+            //         // 更新玩家状态
+            //         player.isAlive = false;
+            //         // 发起继续游戏的信号or发起游戏结束的信号
+            //         let identity = player.isSpy ? "卧底" : "平民";
+            //         let winner = player.isSpy ? "平民" : "卧底";
+            //         let gameEnd = !room.game.activeSpies() || (room.game.activeSpies() * 2) === room.game.activePlayers(); // 卧底没了，或卧底数等于平民数了，游戏结束
+            //         if (gameEnd) {
+            //             room.game.voteMsg = `得票数最高的是【${room.game.targetPlayer[0]}】，身份为${identity}，恭喜${winner}获得胜利！`;
+            //             // 游戏结束
+            //             room.game.state = "ending";
+            //         } else {
+            //             room.game.voteMsg = `得票数最高的是【${room.game.targetPlayer[0]}】，身份为${identity}，游戏继续！`;
+            //             // 游戏继续
+            //             room.game.state = "preparing";
+            //         }
+            //     } else {
+            //         // 投出两名或以上的玩家，发起重新投票的信号
+            //         room.game.voteMsg = `得票数最高的是【${room.game.targetPlayer.join("，")}】，重新进行投票！`;
+            //         room.game.state = "revoting";
+            //     }
+            //     // GO!
+            //     updateRooms(1, '', room);
+            // }
+        }
+
+        roomBroadcast(room, {
             type: 'updateGame',
             key: 'state',
             data: {
                 state
             }
         });
-        roomBroadcast(target, { // 此时target即room
+        roomBroadcast(room, {
             type: 'log',
             data: {
                 msg: `改变state为${state}！`
@@ -412,11 +531,11 @@ function updateGameState(msg, ws) {
     }
 }
 
-function updateGame(msg, ws) {
+function updatePlayerRecords(msg, ws) {
     // msg = {
-    //     type: "updateGame",
+    //     type: "updatePlayerRecords",
     //     data: {
-    //         key: []
+    //         userId, url
     //     }
     // }
     let {
@@ -424,70 +543,133 @@ function updateGame(msg, ws) {
         hallType
     } = ws;
     let room = rooms[hallType][roomId];
-    // msg.key可以是players等，msg.data.subKey可以是records等
-    if (msg.data.subKey) {
-        // 有subKey，目前唯有players存在
-        let players = room.game[msg.key];
-        let player = players.find(player => player.name === msg.data.playerName);
-        player[msg.data.subKey] = msg.data.data[msg.data.subKey];
-
-        if (msg.data.subKey === "records") {
-            // 更新录音状态
-            room.game.finishCount++;
-
-            if (room.game.finishCount === room.game.activePlayers()) {
-                // 全部录音准备完成，更改状态，开始播放
-                room.game.state = "playing";
-                room.game.finishCount = 0;
-                updateRooms(1, '', room);
+    let {
+        userId,
+        url
+    } = msg.data;
+    let player = room.game.players.find(player => player._id === userId);
+    console.log(`【${player.nickName}】的records增加${url}`);
+    player.records.push(url);
+    room.game.finishCount++;
+    console.log(`收到【${player.nickName}】的录音，finishCount: `, room.game.finishCount);
+    if (room.game.finishCount === room.game.activePlayers()) {
+        // 全部玩家上传好录音，可以更改状态为播放了
+        console.log(`房间【${room.roomId}】的state将从[${room.game.state}]改为[playing]`);
+        room.game.state = 'playing'
+        room.game.finishCount = 0;
+        
+        roomBroadcast(room, {
+            type: 'updateGame',
+            key: 'players',
+            data: {
+                players: room.game.players
             }
+        });
+        
+        console.log(room.game.players.filter(p => p.isAlive).map(p => p.records));
 
-        }
-    } else {
-        // 更新game的key
-
-        room.game[msg.key] = msg.data[msg.key];
-
+        roomBroadcast(room, {
+            type: 'updateGame',
+            key: 'state',
+            data: {
+                state: 'playing'
+            }
+        });
+        
+        roomBroadcast(room, {
+            type: 'log',
+            data: {
+                msg: `改变state为playing！`
+            }
+        });
     }
-
 }
 
-// 投票相关（初步逻辑：全部投好了再结算
+function updatePlayerInfo(msg, ws) {
+    // msg = {
+    //     type: "updatePlayerInfo",
+    //     data: {
+    //         userId, key, value
+    //     }
+    // }
+    let {
+        roomId,
+        hallType
+    } = ws;
+    let room = rooms[hallType][roomId];
+    let {
+        userId,
+        key,
+        value
+    } = msg.data;
+    let player = room.game.players.find(player => player._id === userId);
+    player[key] = value;
+    roomBroadcast(room, {
+        type: 'updateGame',
+        key: 'players',
+        data: {
+            players: room.game.players
+        }
+    });
+    roomBroadcast(room, {
+        type: 'log',
+        data: {
+            msg: `【${player.nickName}】的[${key}]现在为[${value}]`
+        }
+    });
+}
+
+
 function vote(msg, ws) {
-    let room = rooms.find(room => room.roomId === msg.roomId);
-    room.game.voteResult.push(msg.data);
-    if (room.game.voteResult.length === room.game.activePlayers()) {
-        // 收集到所有active玩家的投票结果后
-        room.game.targetPlayer = room.game.voteResult.findMostOccurence("target");
-        room.game.voteResult = [];
-        if (room.game.targetPlayer.length === 1) {
-            // 投出一名玩家，该轮结束
-            let player = room.game.players.find(player => player.name === room.game.targetPlayer[0]);
-            // 更新玩家状态
-            player.isAlive = false;
-            // 发起继续游戏的信号or发起游戏结束的信号
-            let identity = player.isSpy ? "卧底" : "平民";
-            let winner = player.isSpy ? "平民" : "卧底";
-            let gameEnd = !room.game.activeSpies() || (room.game.activeSpies() * 2) === room.game.activePlayers(); // 卧底没了，或卧底数等于平民数了，游戏结束
-            if (gameEnd) {
-                room.game.voteMsg = `得票数最高的是【${room.game.targetPlayer[0]}】，身份为${identity}，恭喜${winner}获得胜利！`;
-                // 游戏结束
-                room.game.state = "ending";
-            } else {
-                room.game.voteMsg = `得票数最高的是【${room.game.targetPlayer[0]}】，身份为${identity}，游戏继续！`;
-                // 游戏继续
-                room.game.state = "preparing";
-            }
-        } else {
-            // 投出两名或以上的玩家，发起重新投票的信号
-            room.game.voteMsg = `得票数最高的是【${room.game.targetPlayer.join("，")}】，重新进行投票！`;
-            room.game.state = "revoting";
-        }
-        // GO!
-        updateRooms(1, '', room);
-    }
-}
+    // 注：仅在投票中或已投的时候可以调用，弃票后不能调用
+    // msg = {
+    //     type: "vote",
+    //     data: {
+    //         userId: 玩家的_id
+    //         target: 所投玩家的_id，或者为null表示弃票
+    //     }
+    // }
+    let {
+        roomId,
+        hallType
+    } = ws;
+    let room = rooms[hallType][roomId];
 
+    let {
+        userId,
+        target
+    } = msg.data;
+    
+    let player = room.game.players.find(player => player._id === userId);
+    
+    if (player.voteStatus !== 1) {
+        // 已经投过改投的情况
+        player.votes.pop();
+    }
+    if (target) {
+        player.voteStatus = 2;
+        player.votes.push(target);
+    } else {
+        player.voteStatus = 3;
+        player.votes.push("");
+    }
+
+    roomBroadcast(room, {
+        type: 'updateGame',
+        key: 'players',
+        data: {
+            players: room.game.players
+        }
+    });
+    let targetPlayer = room.game.players.find(player => player._id === target) || null;
+    let reply = target ? `玩家【${player.nickName}】将票投给了【${targetPlayer.nickName}】` : `玩家【${player.nickName}】弃票了。`
+    roomBroadcast(room, {
+        type: 'log',
+        data: {
+            msg: reply
+        }
+    });
+}
 
 
 function notify(ws, reply) {
@@ -585,7 +767,8 @@ module.exports = {
     // 消息相关
     sendRoomMessage,
     updateGameState,
-    updateGame,
+    updatePlayerRecords,
+    updatePlayerInfo,
     // 投票相关
     vote
 }
