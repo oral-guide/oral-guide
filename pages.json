@@ -3,13 +3,13 @@
 		{
 			"path": "pages/Index/index",
 			"style": {
-				"navigationBarTitleText": "首页"
+				"navigationBarTitleText": "Index"
 			}
 		},
 		{
 			"path": "pages/gameHall/index",
 			"style": {
-				"navigationBarTitleText": "大厅"
+				"navigationBarTitleText": "Game hall"
 			}
 		},
 		{
@@ -21,7 +21,7 @@
 		{
 			"path": "pages/Spy/index",
 			"style": {
-				"navigationBarTitleText": "谁是卧底"
+				"navigationBarTitleText": "Who is the spy"
 			}
 		},
 		{
@@ -33,13 +33,13 @@
 		{
 			"path": "pages/myFriend/index",
 			"style": {
-				"navigationBarTitleText": "通讯录"
+				"navigationBarTitleText": "Friends"
 			}
 		},
 		{
 			"path": "pages/Home/index",
 			"style": {
-				"navigationBarTitleText": "我"
+				"navigationBarTitleText": "Me"
 			}
 		}
 		

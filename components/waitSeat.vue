@@ -78,7 +78,7 @@ export default {
 
   &_nick {
     width: 16vw;
-    height: 6vw;
+    height: 10vw;
     text-align: center;
     font-size: 12px;
     color: #333;

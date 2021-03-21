@@ -36,11 +36,11 @@ export default {
       // 游戏列表
       gameList: [
         {
-          name: "谁是卧底",
+          name: "Who is the spy",
           imgUrl: "../../static/index/spy_logo.png",
         },
         {
-          name: "情景对话",
+          name: "Shadowing exercise",
           imgUrl: "../../static/index/dialog_logo.jpg",
         },
       ],
@@ -88,21 +88,23 @@ export default {
     width: 80vw;
     margin: 0 auto 20px auto;
     display: flex;
-    justify-content: center;
     align-items: center;
     background-color: #fff;
     box-shadow: 0 4px 10px #eee;
+    padding-left: 40px;
 
     img {
       display: block;
       width: 30vw;
       height: 30vw;
-      margin-right: 36px;
+      margin-right: 30px;
     }
 
     h1 {
+      width: 35vw;
       font-size: 18px;
       font-weight: 700;
+      text-align: center;
     }
   }
 }

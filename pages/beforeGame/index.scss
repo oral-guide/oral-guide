@@ -1,0 +1,75 @@
+.before {
+  height: 100vh;
+  // padding-top: 20px;
+  background-color: #f8f8f8;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  &_beforeMatch {
+    ::v-deep .van-button {
+      width: 70vw;
+      height: 15vw;
+
+      &:first-child {
+        margin-bottom: 16px;
+      }
+    }
+  }
+
+  &_matching {
+    &_anim {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 15px;
+    }
+  }
+
+  &_matched {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+
+    &_avatar {
+      width: 16vw;
+      height: 16vw;
+      margin-bottom: 2px;
+      border-radius: 50%;
+      background-color: #fff;
+      border: 1px solid #ccc;
+
+      img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+      }
+    }
+
+    &_name {
+      width: 16vw;
+      height: 5vw;
+      color: #333;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      overflow: hidden;
+    }
+
+    span {
+      display: block;
+      margin: 8px 0;
+      font-size: 24px;
+      font-weight: 700;
+      color: #ff4101;
+    }
+
+    h3 {
+      margin-top: 30px;
+      font-size: 22px;
+      font-weight: 700;
+      color: #ff1101;
+    }
+  }
+}

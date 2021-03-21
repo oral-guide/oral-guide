@@ -3,9 +3,9 @@
   <div class="hall">
     <van-skeleton title row="3"	:loading="!isLoaded">
       <!-- 创建房间 -->
-      <van-button color="#ff4101" block @click="showAddDialog">创建房间</van-button>
+      <van-button color="#ff4101" block @click="showAddDialog">Create a room</van-button>
       <!-- 房间列表 -->
-      <van-empty description="暂无房间，快创建一个吧" v-if="!roomList" />
+      <van-empty description="There is no room now, create one." v-if="!roomList" />
       <div
         class="hall_room"
         v-else
@@ -26,7 +26,7 @@
       <!-- 创建房间对话框 -->
       <van-dialog
         use-slot
-        title="创建房间"
+        title="Create"
         :show="isAdd"
         theme="round-button"
         show-cancel-button
@@ -37,22 +37,22 @@
           <van-field
             :value="roomInfo.name"
             @input="handleInput($event, 'name')"
-            label="房间名称"
-            placeholder="请输入房间名称"
+            label="Room name"
+            placeholder="Enter the name of the room"
             required
           />
           <van-field
             :value="roomInfo.pswd"
             @input="handleInput($event, 'pswd')"
-            label="房间密码"
-            placeholder="请输入4-8位密码"
+            label="Room password"
+            placeholder="Enter the password of the room"
             type="password"
           />
           <van-field
             :value="roomInfo.seats"
             @input="handleInput($event, 'seats')"
-            label="房间人数"
-            placeholder="介于4-8之间"
+            label="Room players"
+            placeholder="The number of players should be between 6 to 8"
             required
           />
         </van-cell-group>
@@ -60,7 +60,7 @@
       <!-- 加入房间对话框（有密码） -->
       <van-dialog
         use-slot
-        title="加入房间"
+        title="Join"
         :show="isEnter"
         theme="round-button"
         show-cancel-button
@@ -71,8 +71,8 @@
           <van-field
             :value="myPswd"
             @input="handlePswdInput"
-            label="房间密码"
-            placeholder="请输入房间密码"
+            label="Room password"
+            placeholder="Enter the password of the room"
             type="password"
           />
         </van-cell-group>
