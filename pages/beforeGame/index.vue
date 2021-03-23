@@ -56,6 +56,9 @@ export default {
     // 开始单人游戏
     enterGame () {
       console.log('开始游戏')
+      uni.navigateTo({
+        url: '/pages/Player1/index'
+      })
     },
     // 开始匹配
     startMatch () {
