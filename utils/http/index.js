@@ -122,12 +122,13 @@ async function updatePlayerRecords(userId, url) {
 }
 
 // 上传音频并返回相应url
-async function uploadAudio(filePath) {
+async function uploadAudio(filePath, sentence = '') {
     const option = {
         url: "https://humansean.com:8080/upload/audio",
         filePath,
         formData: {
             filePath,
+            sentence
         },
         name: "myFile",
     };

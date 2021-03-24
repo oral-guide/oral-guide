@@ -59,13 +59,18 @@ var uploadAudio = multer({
     })
 });
 app.post('/upload/audio', uploadAudio.single("myFile"), function (req, res) {
-    res.json({
-        status: 200,
-        msg: "success",
-        data: {
-            'url': 'https://humansean.com:8080/uploads/recordings/' + req.file.filename
-        }
-    })
+    const { sentence } = req.body;
+    if (sentence) {
+
+    } else {
+        res.json({
+            status: 200,
+            msg: "success",
+            data: {
+                'url': 'https://humansean.com:8080/uploads/recordings/' + req.file.filename
+            }
+        })
+    }
 })
 
 // 小程序部分

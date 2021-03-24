@@ -78,8 +78,8 @@ export default {
       recorderManager.start({
         duration: 10000,
         format: "mp3",
-        sampleRate: 44100,
-        encodeBitRate: 128000,
+        sampleRate: 16000,
+        numberOfChannels: 1,
       })
     },
     // 结束录音
