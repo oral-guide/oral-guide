@@ -3,7 +3,7 @@
   <div class="before">
     <!-- <gameResult></gameResult> -->
     <div class="before_beforeMatch" v-if="status===0">
-      <van-button block color="#ff4101" plain icon="user-o" @click="enterGame">1 Player</van-button>
+      <van-button block color="#ff4101" plain icon="user-o" @click="enterGame1">1 Player</van-button>
       <van-button block color="#ff4101" icon="friends-o" @click="startMatch">2 Players</van-button>
     </div>
     <div class="before_matching" v-if="status===1">
@@ -54,10 +54,17 @@ export default {
   },
   methods: {
     // 开始单人游戏
-    enterGame () {
+    enterGame1 () {
       console.log('开始游戏')
       uni.navigateTo({
-        url: '/pages/Player1/index'
+        url: '/pages/1Player/index'
+      })
+    },
+    // 开始双人人游戏
+    enterGame2 () {
+      console.log('开始游戏')
+      uni.navigateTo({
+        url: '/pages/2Player/index'
       })
     },
     // 开始匹配
@@ -66,7 +73,7 @@ export default {
       this.status = 1
       let timer = setTimeout(() => {
         this.status = 2
-        this.enterGame()
+        this.enterGame2()
       }, 1500)
     },
     // 取消匹配

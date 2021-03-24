@@ -31,9 +31,15 @@
 			}
 		},
 		{
-			"path": "pages/Player1/index",
+			"path": "pages/1Player/index",
 			"style": {
-				"navigationBarTitleText": ""
+				"navigationBarTitleText": "Shadowing exercise"
+			}
+		},
+		{
+			"path": "pages/2Player/index",
+			"style": {
+				"navigationBarTitleText": "Shadowing exercise"
 			}
 		},
 		{
@@ -84,7 +90,8 @@
 			"van-tag": "/wxcomponents/vant/tag/index",
 			"van-divider": "/wxcomponents/vant/divider/index",
 			"van-skeleton": "/wxcomponents/vant/skeleton/index",
-			"van-circle": "/wxcomponents/vant/circle/index"
+			"van-circle": "/wxcomponents/vant/circle/index",
+			"van-progress": "/wxcomponents/vant/progress/index"
 		}
 	},
 	"tabBar": {

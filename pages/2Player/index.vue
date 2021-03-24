@@ -10,42 +10,42 @@
             <audio ref="audio" :src="audioUrl"></audio>
             <!-- 这个按钮模仿打分功能 -->
             <van-button @click="getScore()">打分吧</van-button>
-            <p class="Sscore">score:{{score}}</p>
+            <p class="Sscore">score: {{score}}</p>
         </div>
-        <!-- 用户信息 -->
-        <div class="user">
-            <img class="player" :src="userInfo.avatarUrl" alt />
-            <p class="name">{{userInfo.nickName}}</p>
+        <!-- 玩家自己 -->
+        <div class="player1">
+            <!-- 用户信息 -->
+            <div class="user">
+                <img class="player" :src="userInfo.avatarUrl" alt />
+                <p class="name">{{userInfo.nickName}}</p>
+            </div>
+            <!-- 用户得分 -->
+            <van-progress 
+                class="score1" 
+                pivot-text="score" 
+                color="#ff4101" 
+                percentage="25"
+                stroke-width="10"
+            />
         </div>
-        <!-- 用户得分 -->
-        <van-circle
-            :value="value"
-            layer-color="#eeeeee"
-            color="#ff4101"
-            size="150"
-            stroke-width="10"
-            :text="Fscore"
-            class="Tscore"
-        />
-        <!-- 两个按钮 -->
-        <div class="button">
-            <!-- 按钮1：重新录音打分 -->
-            <van-button
-                class="button1"
-                color="#ff4101"
-                plain
-            >
-                Try again
-            </van-button>
-            <!-- 按钮2：下一题 -->
-            <van-button
-                class="button2"
-                color="#ff4101"
-                @click="nextSen()"
-            >
-                Next
-            </van-button>
+
+        <!-- 对手 -->
+        <div class="player2">
+            <!-- 用户信息 -->
+            <div class="user">
+                <img class="player" :src="userInfo.avatarUrl" alt />
+                <p class="name">{{userInfo.nickName}}</p>
+            </div>
+            <!-- 用户得分 -->
+            <van-progress 
+                class="score1" 
+                pivot-text="score" 
+                color="#ff4101" 
+                percentage="25"
+                stroke-width="10"
+            />
         </div>
+
         <van-toast id="van-toast" />
     </div>
 </template>
@@ -55,7 +55,7 @@ import Toast from "../../wxcomponents/vant/toast/toast";
 import { mapState, mapGetters, mapMutations } from "vuex";
 
 export default {
-  name: 'Player1',
+  name: 'Player2',
     data() {
         return{
             number: 0, //当前句子在数组中的顺序，0代表第一个句子
@@ -103,15 +103,15 @@ export default {
             
             // this.$refs.audio.play();
         },
-        nextSen() {
-            if(this.number !== this.sentences.length-1){
-                this.number++;
-                this.score = 0;
-                this.Tscore = this.Fscore;
-            } else {
-                Toast('This is the last sentence!');
-            }
-        },
+        // nextSen() {
+        //     if(this.number !== this.sentences.length-1){
+        //         this.number++;
+        //         this.score = 0;
+        //         this.Tscore = this.Fscore;
+        //     } else {
+        //         Toast('This is the last sentence!');
+        //     }
+        // },
         // 给用户的录音打分，需要调用打分API
         getScore() {
             this.score = 100;//这个分数是系统给的分，每次可能不同
@@ -145,35 +145,27 @@ export default {
     }
 }
 
-.user {
-    display: flex;
-    align-items: center;
-    margin-left:10px;
-    img {
-      width: 18vw;
-      height: 18vw;
-      border-radius: 50%;
-    }
-    .name {
-      font-size: 16px;
-      font-weight: 700;
-      margin-left:10px;
+.player1, .player2 {
+    margin: 5% 5%;
+    padding: 5% 5%;
+    border: 1px solid;
+    .user {
+        display: flex;
+        align-items: center;
+        // margin-left:10px;
+        margin-bottom: 20px;
+        img {
+        width: 18vw;
+        height: 18vw;
+        border-radius: 50%;
+        }
+        .name {
+        font-size: 16px;
+        font-weight: 700;
+        margin-left:10px;
+        }
     }
 }
 
-.Tscore {
-    position: relative;
-    left: 50%;
-    margin-left: -75px;
-}
-
-.button {
-    text-align: center;
-    margin-top: 5%;
-    .button1, .button2 {
-        display: inline;
-        margin: 10%;
-    }
-}
 
 </style>
