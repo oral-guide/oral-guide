@@ -10,17 +10,11 @@ function updateGame(reply) {
     store.state.game[reply.key] = reply.data[reply.key];
 }
 
-function initializeGame(reply) {
+function initializeGame() {
     // 游戏开始，执行页面跳转即可
-    if (reply.key === 'spy') {
-        uni.navigateTo({
-            url: "../Spy/index",
-        });
-    } else {
-        uni.navigateTo({
-            url: "../2Player/index",
-        });
-    }
+    uni.navigateTo({
+        url: "../Spy/index",
+    });
 }
 
 function log(reply) {

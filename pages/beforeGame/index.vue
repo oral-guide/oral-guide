@@ -28,6 +28,7 @@
 </template>
 
 <script>
+import { mapState } from 'vuex';
 // import gameResult from '../../components/gameResult'
 export default {
   name: 'beforeGame',
@@ -52,6 +53,9 @@ export default {
       // isLoaded: false,  // 页面数据是否加载完毕
     };
   },
+  computed: {
+    ...mapState(['game'])
+  },
   methods: {
     // 开始单人游戏
     enterGame1 () {
@@ -71,10 +75,6 @@ export default {
     startMatch () {
       console.log('开始匹配')
       this.status = 1
-      let timer = setTimeout(() => {
-        this.status = 2
-        this.enterGame2()
-      }, 1500)
     },
     // 取消匹配
     cancelMatch () {
@@ -87,6 +87,14 @@ export default {
     //     url: `/pages/gameHall/index?type=${name}`
     //   });
     // },
+  },
+  watch: {
+    game(n) {
+      if (n) {
+        this.status = 2
+        this.enterGame2()
+      }
+    }
   },
 };
 </script>

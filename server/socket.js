@@ -177,7 +177,6 @@ function enterRoom(msg, ws) {
 function onMatching(msg, ws) {
     // msg = {
     //     type: "onMatching",
-    //     data: { roomId, isOwner }
     // }
 
 
@@ -200,11 +199,6 @@ function onMatching(msg, ws) {
             data: {
                 game
             }
-        })
-        // 2. 执行页面跳转
-        roomBroadcast(room, {
-            type: 'initializeGame',
-            key: 'shadow'
         })
         roomBroadcast(room, {
             type: 'log',
@@ -373,8 +367,7 @@ async function initializeGame(msg, ws) {
     })
     // 2. 执行页面跳转
     roomBroadcast(room, {
-        type: 'initializeGame',
-        key: 'spy'
+        type: 'initializeGame'
     })
     roomBroadcast(room, {
         type: 'log',
