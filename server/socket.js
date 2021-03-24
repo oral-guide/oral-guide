@@ -43,22 +43,36 @@ function connect(msg, ws) {
         }
     })
     console.log(`用户【${userInfo.nickName || userInfo._id}】上线了。`);
-    updateRooms(0, hall, ws);
+    if (hall === 'spy') {
+        updateRooms(0, hall, ws);
+    } else {
+        onMatching(null, ws);
+    }
 }
 
 function onClose(msg, ws) {
-    console.log(ws.userInfo);
     let {
         _id
     } = ws.userInfo;
-    switch (ws.state) {
-        case "room":
-            leaveRoom(null, ws);
-            // delete searchingPlayers[_id];
-            break;
-        case "gaming":
-            leaveRoom(null, ws);
-            break;
+    if (ws.hallType === 'spy') {
+        switch (ws.state) {
+            case "room":
+                leaveRoom(null, ws);
+                // delete searchingPlayers[_id];
+                break;
+            case "gaming":
+                leaveRoom(null, ws);
+                break;
+        }
+    } else {
+        switch (ws.state) {
+            case "matching":
+                rooms.shadow.waitingRooms.pop();
+                break;
+            case "gaming":
+                // rooms.shadow.playingRooms[ws.roomId]
+                break;
+        }
     }
     delete userMap[_id];
     console.log('用户下线: ', _id);
@@ -174,22 +188,19 @@ function enterRoom(msg, ws) {
     console.log(`【${ws.userInfo.nickName}】进入了房间“${room.name}”。目前房间内人数为${room.players.length}/${room.seats}`);
 }
 
-function onMatching(msg, ws) {
-    // msg = {
-    //     type: "onMatching",
-    // }
-
-
+async function onMatching(msg, ws) {
     // 更新用户的room状态
     ws.state = 'matching';
     let shadowRooms = rooms[ws.hallType];
-    let haveRoom = shadowRooms.waitingRooms.length ? shadowRooms.waitingRooms[0] : null;
-    if (haveRoom) {
+    let room = shadowRooms.waitingRooms.length ? shadowRooms.waitingRooms.pop() : null;
+    if (room) {
         // 加入房间，匹配成功，游戏开始
-        haveRoom.players.push(ws.userInfo);
-        let room = shadowRooms.waitingRooms.pop();
+        ws.state = 'gaming';
+        ws.roomId = room.roomId;
+        userMap[room.players[0]._id].state = 'gaming';
+        console.log(userMap[room.players[0]._id].userInfo);
+        room.players.push(ws.userInfo);
         shadowRooms.playingRooms[room.roomId] = room;
-
         // 1. 更新全局game对象
         let game = await startShadowGame(room);
         room.game = game;
@@ -215,6 +226,7 @@ function onMatching(msg, ws) {
             game: null
         }
         shadowRooms.waitingRooms.push(room);
+        ws.roomId = room.roomId;
     }
 
     notify(ws, {
@@ -810,7 +822,6 @@ module.exports = {
     // 房间相关
     createRoom,
     enterRoom,
-    onMatching,
     leaveRoom,
     toggleReady,
     initializeGame,

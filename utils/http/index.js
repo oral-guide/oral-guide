@@ -29,6 +29,9 @@ function openWebsocket() {
         console.log("已关闭！");
     });
 }
+function closeWebsocket() {
+    uni.closeSocket();
+}
 async function sendSocketMsg(msg) {
     return await uni.sendSocketMessage({
         data: JSON.stringify(msg)
@@ -222,6 +225,7 @@ async function getSentences() {
 
 export default {
     openWebsocket,
+    closeWebsocket,
     sendSocketMsg,
     login,
     getStatus,

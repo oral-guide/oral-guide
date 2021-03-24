@@ -28,7 +28,7 @@
 </template>
 
 <script>
-import { mapState } from 'vuex';
+import { mapState, mapMutations } from 'vuex';
 // import gameResult from '../../components/gameResult'
 export default {
   name: 'beforeGame',
@@ -38,6 +38,7 @@ export default {
   data() {
     return {
       status: 0,  // 页面当前状态，0表示未匹配，1表示匹配中，2表示匹配成功
+      canCancel: false, // 能否取消匹配：无法在websocket开启前就关闭
       players: [
         {
           id: 0,
@@ -57,6 +58,7 @@ export default {
     ...mapState(['game'])
   },
   methods: {
+    ...mapMutations(['setHall']),
     // 开始单人游戏
     enterGame1 () {
       console.log('开始游戏')
@@ -72,13 +74,22 @@ export default {
       })
     },
     // 开始匹配
-    startMatch () {
+    async startMatch () {
       console.log('开始匹配')
+      this.canCancel = false;
       this.status = 1
+      this.setHall('shadow');
+      await this.$util.openWebsocket();
+      this.canCancel = true;
     },
     // 取消匹配
     cancelMatch () {
+      if (!this.canCancel) {
+        // @TODO 心瑶：做点用户反馈
+        return;
+      }
       this.status = 0
+      this.$util.closeWebsocket();
     }
     // 跳转游戏大厅页面
     // goGameHall(type) {
