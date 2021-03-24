@@ -18,29 +18,11 @@ process.on('uncaughtException', err => {
 
 let userMap = {};
 let rooms = {
-    spy: {
-        1612411639545: {
-            game: null,
-            isPlaying: false,
-            msgs: [],
-            name: "测试房间1",
-            players: [],
-            pswd: "123456",
-            roomId: 1612411639545,
-            seats: 8
-        },
-        1612411664937: {
-            game: null,
-            isPlaying: false,
-            msgs: [],
-            name: "测试房间2",
-            players: [],
-            pswd: "",
-            roomId: 1612411664937,
-            seats: 6,
-        }
-    },
-    dialog: {}
+    spy: {},
+    shadow: {
+        playingRooms: {},
+        waitingRooms: []
+    }
 };
 // 用户上线
 function connect(msg, ws) {
@@ -192,6 +174,63 @@ function enterRoom(msg, ws) {
     console.log(`【${ws.userInfo.nickName}】进入了房间“${room.name}”。目前房间内人数为${room.players.length}/${room.seats}`);
 }
 
+function onMatching(msg, ws) {
+    // msg = {
+    //     type: "onMatching",
+    //     data: { roomId, isOwner }
+    // }
+
+
+    // 更新用户的room状态
+    ws.state = 'matching';
+    let shadowRooms = rooms[ws.hallType];
+    let haveRoom = shadowRooms.waitingRooms.length ? shadowRooms.waitingRooms[0] : null;
+    if (haveRoom) {
+        // 加入房间，匹配成功，游戏开始
+        haveRoom.players.push(ws.userInfo);
+        let room = shadowRooms.waitingRooms.pop();
+        shadowRooms.playingRooms[room.roomId] = room;
+
+        // 1. 更新全局game对象
+        let game = await startShadowGame(room);
+        room.game = game;
+        roomBroadcast(room, {
+            type: 'update',
+            key: 'game',
+            data: {
+                game
+            }
+        })
+        // 2. 执行页面跳转
+        roomBroadcast(room, {
+            type: 'initializeGame',
+            key: 'shadow'
+        })
+        roomBroadcast(room, {
+            type: 'log',
+            data: {
+                msg: '游戏开始！！！'
+            }
+        })
+    } else {
+        // 创建房间
+        let room = {
+            roomId: new Date().getTime(),
+            players: [ws.userInfo],
+            isPlaying: false,
+            game: null
+        }
+        shadowRooms.waitingRooms.push(room);
+    }
+
+    notify(ws, {
+        type: 'log',
+        data: {
+            msg: `【${ws.userInfo.nickName}】进入了匹配状态！`,
+        }
+    })
+    console.log(`【${ws.userInfo.nickName}】进入了匹配状态！`);
+}
 
 function leaveRoom(msg, ws) {
     // msg = {
@@ -335,6 +374,7 @@ async function initializeGame(msg, ws) {
     // 2. 执行页面跳转
     roomBroadcast(room, {
         type: 'initializeGame',
+        key: 'spy'
     })
     roomBroadcast(room, {
         type: 'log',
@@ -342,9 +382,6 @@ async function initializeGame(msg, ws) {
             msg: '游戏开始！！！'
         }
     })
-    let playerInfo = game.players.reduce((acc, cur) => `${acc} 【${cur.nickName}】`, '');
-    console.log(playerInfo);
-    console.log(`房间【${room.roomId}】的游戏开始了！玩家有${playerInfo}`);
 }
 
 // 游戏相关
@@ -377,6 +414,25 @@ async function startSpyGame(room) {
         activeSpies() {
             return this.players.filter(player => player.isAlive && player.isSpy).length;
         },
+        finishCount: 0,
+        voteResult: []
+    }
+    return game;
+}
+async function startShadowGame(room) {
+    let players = room.players
+        .map(player => { // 增加游戏所需属性
+            return {
+                ...player,
+                sentences: []
+            }
+        })
+    let allSentences = await mongodb.col('sentences').find().toArray();
+    let sentences = allSentences[Math.floor(allSentences.length * Math.random())].sentences;
+    let game = {
+        state: "preparing",
+        players,
+        sentences,
         finishCount: 0,
         voteResult: []
     }
@@ -428,7 +484,7 @@ function updateGameState(msg, ws) {
         }
         if (state === 'preparing') {
             // 投票结束了
-            
+
             console.log('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~');
             console.log('投票结束啦！！！！！！！！！！！！');
             console.log('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~');
@@ -456,7 +512,7 @@ function updateGameState(msg, ws) {
             }
             console.log(votedPlayers);
             console.log(voteResult);
-            
+
             roomBroadcast(room, {
                 type: 'updateGame',
                 key: 'voteResult',
@@ -481,7 +537,7 @@ function updateGameState(msg, ws) {
                     state: 'preparing'
                 }
             });
-            
+
 
             // if (room.game.voteResult.length === room.game.activePlayers()) {
             //     // 收集到所有active玩家的投票结果后
@@ -557,7 +613,7 @@ function updatePlayerRecords(msg, ws) {
         console.log(`房间【${room.roomId}】的state将从[${room.game.state}]改为[playing]`);
         room.game.state = 'playing'
         room.game.finishCount = 0;
-        
+
         roomBroadcast(room, {
             type: 'updateGame',
             key: 'players',
@@ -565,7 +621,7 @@ function updatePlayerRecords(msg, ws) {
                 players: room.game.players
             }
         });
-        
+
         console.log(room.game.players.filter(p => p.isAlive).map(p => p.records));
 
         roomBroadcast(room, {
@@ -575,7 +631,7 @@ function updatePlayerRecords(msg, ws) {
                 state: 'playing'
             }
         });
-        
+
         roomBroadcast(room, {
             type: 'log',
             data: {
@@ -639,9 +695,9 @@ function vote(msg, ws) {
         userId,
         target
     } = msg.data;
-    
+
     let player = room.game.players.find(player => player._id === userId);
-    
+
     if (player.voteStatus !== 1) {
         // 已经投过改投的情况
         player.votes.pop();
@@ -761,6 +817,7 @@ module.exports = {
     // 房间相关
     createRoom,
     enterRoom,
+    onMatching,
     leaveRoom,
     toggleReady,
     initializeGame,

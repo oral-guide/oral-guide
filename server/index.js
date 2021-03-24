@@ -81,7 +81,7 @@ app.get('/weapp/login', async (req, res) => {
             openid,
             session_key,
             spy: {},
-            dialog: {},
+            shadow: {},
             friends: []
         })
     } else {
@@ -109,6 +109,11 @@ app.get('/weapp/getUserInfo', async (req, res) => {
     delete userInfo['session_key'];
     res.json({ status: 200, data: { userInfo }});
 })
+app.get('/weapp/getSentences', async (req, res) => {
+    let allSentences = await mongodb.col('sentences').find().toArray();
+    let sentences = allSentences[Math.floor(allSentences.length * Math.random())].sentences;
+    res.json({ status: 200, data: { sentences }});
+})
 
 
 // WebSocket
@@ -124,12 +129,6 @@ wss.on("connection", ws => {
         socketTask[msg.type](msg, ws);
     })
     ws.on("close", () => {
-        // if (userMap[ws.user.name].user.roomId) {
-        //     // 还在房间里，退出房间
-        //     forceLeaveRoom(ws)
-        // }
-        // delete userMap[ws.userInfo._id];
         socketTask['onClose'](null, ws);
-        // 还需考虑下用户的inRoom或inGame状态
     })
 })

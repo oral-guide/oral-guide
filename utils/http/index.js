@@ -22,7 +22,6 @@ function openWebsocket() {
     });
     uni.onSocketError((res) => {
         console.log(res);
-        store.state.ws = JSON.stringify(res);
         console.log("websocket出错了！");
     });
     uni.onSocketClose((res) => {
@@ -37,7 +36,12 @@ async function sendSocketMsg(msg) {
 }
 // 创建房间
 async function createRoom(params) {
-    const { roomId, name, pswd, seats } = params
+    const {
+        roomId,
+        name,
+        pswd,
+        seats
+    } = params
     return await sendSocketMsg({
         type: 'createRoom',
         data: { // 请提供一下四个参数的后三个：名字(String)、密码(String)、座位(Number)
@@ -50,7 +54,10 @@ async function createRoom(params) {
 }
 // 进入房间
 async function enterRoom(params) {
-    const { roomId, isOwner } = params
+    const {
+        roomId,
+        isOwner
+    } = params
     return await sendSocketMsg({
         type: 'enterRoom',
         data: {
@@ -148,16 +155,31 @@ async function vote(target) {
 }
 // 登录相关
 async function login() {
-    let [err, { code }] = await uni.login({ provider: 'weixin' });
+    let [err, {
+        code
+    }] = await uni.login({
+        provider: 'weixin'
+    });
     if (code) {
-        let [err, res] = await uni.request({ url: 'https://humansean.com:8080/weapp/login', data: { code } });
+        let [err, res] = await uni.request({
+            url: 'https://humansean.com:8080/weapp/login',
+            data: {
+                code
+            }
+        });
         let cookie = res.cookies[0].split("; ")[0];
         uni.setStorageSync('cookie', cookie);
     }
 }
 async function getStatus() {
     let cookie = uni.getStorageSync('cookie');
-    let [err, { data: { data: { isLogin } } }] = (await uni.request({
+    let [err, {
+        data: {
+            data: {
+                isLogin
+            }
+        }
+    }] = (await uni.request({
         url: 'https://humansean.com:8080/weapp/checkLogin',
         header: {
             'Cookie': cookie
@@ -190,6 +212,14 @@ async function getUserInfo() {
     return res.data.data.userInfo;
 }
 
+async function getSentences() {
+    let [err, res] = await uni.request({
+        url: 'https://humansean.com:8080/weapp/getSentences',
+    });
+    if (err) return err;
+    return res.data.data.sentences;
+}
+
 export default {
     openWebsocket,
     sendSocketMsg,
@@ -207,5 +237,7 @@ export default {
     sendRoomMessage,
     updatePlayerInfo,
     updatePlayerRecords,
-    vote
+    vote,
+    // shadow
+    getSentences
 }
