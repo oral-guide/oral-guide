@@ -44,6 +44,9 @@ export default {
   },
   computed: {
     title () {
+      if (this.players.length === 1) {
+        return 'Result'
+      }
       switch (this.result) {
         case -1:
           return 'You lose!'
