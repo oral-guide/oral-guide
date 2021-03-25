@@ -3,7 +3,7 @@
     <van-dialog
       use-slot
       :title="title"
-      :show="isOver"
+      show
       theme="round-button"
       confirmButtonText="Play again"
       @confirm="playAgain"
@@ -24,7 +24,6 @@ export default {
   name: 'gameResult',
   data () {
     return {
-      isOver: true,  // 游戏是否结束
       result: 0, //  我的战绩，-1表示失败，0表示平局，1表示胜利
       players: [
         {
