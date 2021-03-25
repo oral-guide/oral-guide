@@ -27,11 +27,19 @@ const store = new Vuex.Store({
         player: (state, getters) => {
             return getters.players.find(player => player._id === state.userInfo._id);
         },
+        opponent: (state, getters) => {
+            return getters.players.find(player => player._id !== state.userInfo._id);
+        },
         gameState:(state,getters)=>{
             return state.game ? state.game.state : ""
         },
         word: (state, getters) => {
+            if (!state.game) return {};
             return getters.player.isSpy ? state.game.words[0] : state.game.words[1];
+        },
+        sentences: state => {
+            if (!state.game) return {};
+            return state.game.sentences;
         },
         votedPlayers: (state, getters) => {
             let result = {};

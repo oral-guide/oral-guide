@@ -3,7 +3,7 @@
   <div class="before">
     <!-- <gameResult></gameResult> -->
     <div class="before_beforeMatch" v-if="status===0">
-      <van-button block color="#ff4101" plain icon="user-o" @click="enterGame">1 Player</van-button>
+      <van-button block color="#ff4101" plain icon="user-o" @click="enterGame1">1 Player</van-button>
       <van-button block color="#ff4101" icon="friends-o" @click="startMatch">2 Players</van-button>
     </div>
     <div class="before_matching" v-if="status===1">
@@ -28,6 +28,7 @@
 </template>
 
 <script>
+import { mapState, mapMutations } from 'vuex';
 // import gameResult from '../../components/gameResult'
 export default {
   name: 'beforeGame',
@@ -37,6 +38,7 @@ export default {
   data() {
     return {
       status: 0,  // 页面当前状态，0表示未匹配，1表示匹配中，2表示匹配成功
+      canCancel: false, // 能否取消匹配：无法在websocket开启前就关闭
       players: [
         {
           id: 0,
@@ -52,23 +54,42 @@ export default {
       // isLoaded: false,  // 页面数据是否加载完毕
     };
   },
+  computed: {
+    ...mapState(['game'])
+  },
   methods: {
+    ...mapMutations(['setHall']),
     // 开始单人游戏
-    enterGame () {
+    enterGame1 () {
       console.log('开始游戏')
+      uni.navigateTo({
+        url: '/pages/1Player/index'
+      })
+    },
+    // 开始双人人游戏
+    enterGame2 () {
+      console.log('开始游戏')
+      uni.navigateTo({
+        url: '/pages/2Player/index'
+      })
     },
     // 开始匹配
-    startMatch () {
+    async startMatch () {
       console.log('开始匹配')
+      this.canCancel = false;
       this.status = 1
-      let timer = setTimeout(() => {
-        this.status = 2
-        this.enterGame()
-      }, 1500)
+      this.setHall('shadow');
+      await this.$util.openWebsocket();
+      this.canCancel = true;
     },
     // 取消匹配
     cancelMatch () {
+      if (!this.canCancel) {
+        // @TODO 心瑶：做点用户反馈
+        return;
+      }
       this.status = 0
+      this.$util.closeWebsocket();
     }
     // 跳转游戏大厅页面
     // goGameHall(type) {
@@ -77,6 +98,14 @@ export default {
     //     url: `/pages/gameHall/index?type=${name}`
     //   });
     // },
+  },
+  watch: {
+    game(n) {
+      if (n) {
+        this.status = 2
+        this.enterGame2()
+      }
+    }
   },
 };
 </script>

@@ -1,3 +1,133 @@
+const CryptoJS = require('crypto-js');
+const WebSocket = require('ws');
+const fs = require('fs');
+const parser = require('fast-xml-parser');
+const config = {
+    hostUrl: "wss://ise-api.xfyun.cn/v2/open-ise",
+    host: "iat-api.xfyun.cn",
+    appid: "603e3100",
+    apiSecret: "934d1c575025b8ff46cd33688ccf6bc1",
+    apiKey: "84746ae3315257f5accb7adb5796a7e0",
+    uri: "/v2/open-ise",
+    highWaterMark: 1280,
+}
+const FRAME = {
+    STATUS_FIRST_FRAME: 0,
+    STATUS_CONTINUE_FRAME: 1,
+    STATUS_LAST_FRAME: 2
+}
+let date = (new Date().toUTCString());
+let status = FRAME.STATUS_FIRST_FRAME;
+let wssUrl = config.hostUrl + "?authorization=" + getAuthStr(date) + "&date=" + date + "&host=" + config.host;
+let ws = new WebSocket(wssUrl);
+
+ws.on('open', (event) => {
+    console.log("websocket connect!")
+})
+
+// 得到识别结果后进行处理，仅供参考，具体业务具体对待
+ws.on('message', (data, err) => {
+    if (err) {
+        console.log(`err:${err}`)
+        return
+    }
+    res = JSON.parse(data)
+    if (res.code != 0) {
+        console.log(`error code ${res.code}, reason ${res.message}`)
+        return
+    }
+
+    if (res.data.status == 2) {
+        const { data } = res.data
+        let b = new Buffer(data, 'base64')
+        let grade = parser.parse(b.toString(), {
+            attributeNamePrefix: '',
+            ignoreAttributes: false
+        })
+        console.log(grade);
+        // console.log(grade.xml_result.read_sentence.rec_paper);
+    }
+})
+
+function getAuthStr(date) {
+    let signatureOrigin = `host: ${config.host}\ndate: ${date}\nGET ${config.uri} HTTP/1.1`;
+    let signatureSha = CryptoJS.HmacSHA256(signatureOrigin, config.apiSecret);
+    let signature = CryptoJS.enc.Base64.stringify(signatureSha);
+    let authorizationOrigin = `api_key="${config.apiKey}", algorithm="hmac-sha256", headers="host date request-line", signature="${signature}"`;
+    let authStr = CryptoJS.enc.Base64.stringify(CryptoJS.enc.Utf8.parse(authorizationOrigin));
+    return authStr;
+}
+
+// 传输数据
+function send(data) {
+    let frame = "";
+    switch (status) {
+        case FRAME.STATUS_FIRST_FRAME:
+            // 第一次数据发送：
+            frame = {
+                "common": { app_id: config.appid },
+                "business": {
+                    // 	服务类型指定 ise(开放评测)
+                    "sub": "ise",
+                    // 中文：cn_vip 英文：en_vip
+                    "ent": "en_vip",
+                    // 题型：句子朗读
+                    "category": "read_sentence",
+                    // 待评测文本编码 utf-8
+                    "text": `[content]\n${"I don't know."}`,
+                    // 待评测文本编码 utf-8 gbk
+                    "tte": "utf-8",
+                    // 跳过ttp直接使用ssb中的文本进行评测（使用时结合cmd参数查看）,默认值true
+                    "ttp_skip": true,
+                    "cmd": "ssb",
+                    "aue": "lame",
+                    "auf": "audio/L16;rate=16000",
+                    "rst": "plain"
+                },
+                "data": { "status": 0 }
+            }
+            ws.send(JSON.stringify(frame))
+            // 后续数据发送
+            frame = {
+                "common": { "app_id": config.appid },
+                "business": { "aus": 1, "cmd": "auw", "aue": "lame" },
+                "data": { "status": 1, "data": data.toString('base64') }
+            }
+            status = FRAME.STATUS_CONTINUE_FRAME;
+            break;
+        case FRAME.STATUS_CONTINUE_FRAME:
+            frame = {
+                "common": { "app_id": config.appid },
+                "business": { "aus": 2, "cmd": "auw", "aue": "lame" },
+                "data": { "status": 1, "data": data.toString('base64') }
+            }
+            break;
+        case FRAME.STATUS_LAST_FRAME:
+            frame = {
+                "common": { "app_id": config.appid },
+                "business": { "aus": 4, "cmd": "auw", "aue": "lame" },
+                "data": { "status": 2, "data": data.toString('base64') }
+            }
+            break;
+    }
+    ws.send(JSON.stringify(frame))
+}
+
+// 调用接口
+function sendRec(src) {
+    let readerStream = fs.createReadStream(src, {
+        highWaterMark: config.highWaterMark
+    });
+    readerStream.on('data', function (chunk) {
+        send(chunk)
+    });
+    // 最终帧发送结束
+    readerStream.on('end', function () {
+        status = FRAME.STATUS_LAST_FRAME
+        send("")
+    });
+}
+
 const {
     mongodb,
     ObjectId
@@ -18,29 +148,11 @@ process.on('uncaughtException', err => {
 
 let userMap = {};
 let rooms = {
-    spy: {
-        1612411639545: {
-            game: null,
-            isPlaying: false,
-            msgs: [],
-            name: "测试房间1",
-            players: [],
-            pswd: "123456",
-            roomId: 1612411639545,
-            seats: 8
-        },
-        1612411664937: {
-            game: null,
-            isPlaying: false,
-            msgs: [],
-            name: "测试房间2",
-            players: [],
-            pswd: "",
-            roomId: 1612411664937,
-            seats: 6,
-        }
-    },
-    dialog: {}
+    spy: {},
+    shadow: {
+        playingRooms: {},
+        waitingRooms: []
+    }
 };
 // 用户上线
 function connect(msg, ws) {
@@ -61,22 +173,36 @@ function connect(msg, ws) {
         }
     })
     console.log(`用户【${userInfo.nickName || userInfo._id}】上线了。`);
-    updateRooms(0, hall, ws);
+    if (hall === 'spy') {
+        updateRooms(0, hall, ws);
+    } else {
+        onMatching(null, ws);
+    }
 }
 
 function onClose(msg, ws) {
-    console.log(ws.userInfo);
     let {
         _id
     } = ws.userInfo;
-    switch (ws.state) {
-        case "room":
-            leaveRoom(null, ws);
-            // delete searchingPlayers[_id];
-            break;
-        case "gaming":
-            leaveRoom(null, ws);
-            break;
+    if (ws.hallType === 'spy') {
+        switch (ws.state) {
+            case "room":
+                leaveRoom(null, ws);
+                // delete searchingPlayers[_id];
+                break;
+            case "gaming":
+                leaveRoom(null, ws);
+                break;
+        }
+    } else {
+        switch (ws.state) {
+            case "matching":
+                rooms.shadow.waitingRooms.pop();
+                break;
+            case "gaming":
+                // rooms.shadow.playingRooms[ws.roomId]
+                break;
+        }
     }
     delete userMap[_id];
     console.log('用户下线: ', _id);
@@ -192,6 +318,55 @@ function enterRoom(msg, ws) {
     console.log(`【${ws.userInfo.nickName}】进入了房间“${room.name}”。目前房间内人数为${room.players.length}/${room.seats}`);
 }
 
+async function onMatching(msg, ws) {
+    // 更新用户的room状态
+    ws.state = 'matching';
+    let shadowRooms = rooms[ws.hallType];
+    let room = shadowRooms.waitingRooms.length ? shadowRooms.waitingRooms.pop() : null;
+    if (room) {
+        // 加入房间，匹配成功，游戏开始
+        ws.state = 'gaming';
+        ws.roomId = room.roomId;
+        userMap[room.players[0]._id].state = 'gaming';
+        console.log(userMap[room.players[0]._id].userInfo);
+        room.players.push(ws.userInfo);
+        shadowRooms.playingRooms[room.roomId] = room;
+        // 1. 更新全局game对象
+        let game = await startShadowGame(room);
+        room.game = game;
+        roomBroadcast(room, {
+            type: 'update',
+            key: 'game',
+            data: {
+                game
+            }
+        })
+        roomBroadcast(room, {
+            type: 'log',
+            data: {
+                msg: '游戏开始！！！'
+            }
+        })
+    } else {
+        // 创建房间
+        let room = {
+            roomId: new Date().getTime(),
+            players: [ws.userInfo],
+            isPlaying: false,
+            game: null
+        }
+        shadowRooms.waitingRooms.push(room);
+        ws.roomId = room.roomId;
+    }
+
+    notify(ws, {
+        type: 'log',
+        data: {
+            msg: `【${ws.userInfo.nickName}】进入了匹配状态！`,
+        }
+    })
+    console.log(`【${ws.userInfo.nickName}】进入了匹配状态！`);
+}
 
 function leaveRoom(msg, ws) {
     // msg = {
@@ -334,7 +509,7 @@ async function initializeGame(msg, ws) {
     })
     // 2. 执行页面跳转
     roomBroadcast(room, {
-        type: 'initializeGame',
+        type: 'initializeGame'
     })
     roomBroadcast(room, {
         type: 'log',
@@ -342,9 +517,6 @@ async function initializeGame(msg, ws) {
             msg: '游戏开始！！！'
         }
     })
-    let playerInfo = game.players.reduce((acc, cur) => `${acc} 【${cur.nickName}】`, '');
-    console.log(playerInfo);
-    console.log(`房间【${room.roomId}】的游戏开始了！玩家有${playerInfo}`);
 }
 
 // 游戏相关
@@ -377,6 +549,25 @@ async function startSpyGame(room) {
         activeSpies() {
             return this.players.filter(player => player.isAlive && player.isSpy).length;
         },
+        finishCount: 0,
+        voteResult: []
+    }
+    return game;
+}
+async function startShadowGame(room) {
+    let players = room.players
+        .map(player => { // 增加游戏所需属性
+            return {
+                ...player,
+                sentences: []
+            }
+        })
+    let allSentences = await mongodb.col('sentences').find().toArray();
+    let sentences = allSentences[Math.floor(allSentences.length * Math.random())].sentences;
+    let game = {
+        state: "preparing",
+        players,
+        sentences,
         finishCount: 0,
         voteResult: []
     }
@@ -428,7 +619,7 @@ function updateGameState(msg, ws) {
         }
         if (state === 'preparing') {
             // 投票结束了
-            
+
             console.log('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~');
             console.log('投票结束啦！！！！！！！！！！！！');
             console.log('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~');
@@ -456,7 +647,7 @@ function updateGameState(msg, ws) {
             }
             console.log(votedPlayers);
             console.log(voteResult);
-            
+
             roomBroadcast(room, {
                 type: 'updateGame',
                 key: 'voteResult',
@@ -481,7 +672,7 @@ function updateGameState(msg, ws) {
                     state: 'preparing'
                 }
             });
-            
+
 
             // if (room.game.voteResult.length === room.game.activePlayers()) {
             //     // 收集到所有active玩家的投票结果后
@@ -557,7 +748,7 @@ function updatePlayerRecords(msg, ws) {
         console.log(`房间【${room.roomId}】的state将从[${room.game.state}]改为[playing]`);
         room.game.state = 'playing'
         room.game.finishCount = 0;
-        
+
         roomBroadcast(room, {
             type: 'updateGame',
             key: 'players',
@@ -565,7 +756,7 @@ function updatePlayerRecords(msg, ws) {
                 players: room.game.players
             }
         });
-        
+
         console.log(room.game.players.filter(p => p.isAlive).map(p => p.records));
 
         roomBroadcast(room, {
@@ -575,7 +766,7 @@ function updatePlayerRecords(msg, ws) {
                 state: 'playing'
             }
         });
-        
+
         roomBroadcast(room, {
             type: 'log',
             data: {
@@ -639,9 +830,9 @@ function vote(msg, ws) {
         userId,
         target
     } = msg.data;
-    
+
     let player = room.game.players.find(player => player._id === userId);
-    
+
     if (player.voteStatus !== 1) {
         // 已经投过改投的情况
         player.votes.pop();
