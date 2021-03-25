@@ -14,21 +14,21 @@
     </div>
     <div class="before_matched" v-if="status===2">
       <div class="before_matched_avatar">
-        <img :src="players[0].avatarUrl" alt="">
+        <img :src="player.avatarUrl" alt="">
       </div>
-      <div class="before_matched_name">{{players[0].nickName}}</div>
+      <div class="before_matched_name">{{player.nickName}}</div>
       <span>VS</span>
       <div class="before_matched_avatar">
-        <img :src="players[1].avatarUrl" alt="">
+        <img :src="opponent.avatarUrl" alt="">
       </div>
-      <div class="before_matched_name">{{players[1].nickName}}</div>
+      <div class="before_matched_name">{{opponent.nickName}}</div>
       <h3>Matched</h3>
     </div>
   </div>
 </template>
 
 <script>
-import { mapState, mapMutations } from 'vuex';
+import { mapState, mapGetters, mapMutations } from 'vuex';
 // import gameResult from '../../components/gameResult'
 export default {
   name: 'beforeGame',
@@ -39,23 +39,14 @@ export default {
     return {
       status: 0,  // 页面当前状态，0表示未匹配，1表示匹配中，2表示匹配成功
       canCancel: false, // 能否取消匹配：无法在websocket开启前就关闭
-      players: [
-        {
-          id: 0,
-          nickName: '玩家1',
-          avatarUrl: '../../static/beforeGame/test.jpg'
-        },
-        {
-          id: 1,
-          nickName: '玩家2',
-          avatarUrl: '../../static/beforeGame/test.jpg'
-        }
-      ] // 对战玩家的用户信息
+      canNav: true,
+      
       // isLoaded: false,  // 页面数据是否加载完毕
     };
   },
   computed: {
-    ...mapState(['game'])
+    ...mapState(['game']),
+    ...mapGetters(['player', 'opponent'])
   },
   methods: {
     ...mapMutations(['setHall']),
@@ -85,7 +76,6 @@ export default {
     // 取消匹配
     cancelMatch () {
       if (!this.canCancel) {
-        // @TODO 心瑶：做点用户反馈
         return;
       }
       this.status = 0
@@ -101,9 +91,12 @@ export default {
   },
   watch: {
     game(n) {
-      if (n) {
+      if (n && this.canNav) {
         this.status = 2
-        this.enterGame2()
+        this.canNav = false;
+        setTimeout(() => {
+          this.enterGame2();
+        }, 2000);
       }
     }
   },

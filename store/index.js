@@ -25,10 +25,13 @@ const store = new Vuex.Store({
             return state.game ? state.game.players : [];
         },
         player: (state, getters) => {
-            return getters.players.find(player => player._id === state.userInfo._id);
+            return getters.players.find(player => player._id === state.userInfo._id) || '';
         },
         opponent: (state, getters) => {
-            return getters.players.find(player => player._id !== state.userInfo._id);
+            return getters.players.find(player => player._id !== state.userInfo._id) || '';
+        },
+        round: (state) => {
+            return state.game ? state.game.round : 0;
         },
         gameState:(state,getters)=>{
             return state.game ? state.game.state : ""

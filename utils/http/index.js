@@ -90,6 +90,16 @@ async function initializeGame() {
         type: 'initializeGame'
     })
 }
+async function updateGamePlayers(score, recording) {
+    return await sendSocketMsg({
+        type: 'updateGamePlayers',
+        data: {
+            userId: store.state.userInfo._id,
+            score,
+            recording
+        }
+    })
+}
 // 改变game.state
 async function updateGameState(state) {
     return await sendSocketMsg({
@@ -237,6 +247,7 @@ export default {
     leaveRoom,
     toggleReady,
     initializeGame,
+    updateGamePlayers,
     updateGameState,
     uploadAudio,
     sendRoomMessage,

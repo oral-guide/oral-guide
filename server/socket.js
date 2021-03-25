@@ -1,133 +1,3 @@
-const CryptoJS = require('crypto-js');
-const WebSocket = require('ws');
-const fs = require('fs');
-const parser = require('fast-xml-parser');
-const config = {
-    hostUrl: "wss://ise-api.xfyun.cn/v2/open-ise",
-    host: "iat-api.xfyun.cn",
-    appid: "603e3100",
-    apiSecret: "934d1c575025b8ff46cd33688ccf6bc1",
-    apiKey: "84746ae3315257f5accb7adb5796a7e0",
-    uri: "/v2/open-ise",
-    highWaterMark: 1280,
-}
-const FRAME = {
-    STATUS_FIRST_FRAME: 0,
-    STATUS_CONTINUE_FRAME: 1,
-    STATUS_LAST_FRAME: 2
-}
-let date = (new Date().toUTCString());
-let status = FRAME.STATUS_FIRST_FRAME;
-let wssUrl = config.hostUrl + "?authorization=" + getAuthStr(date) + "&date=" + date + "&host=" + config.host;
-let ws = new WebSocket(wssUrl);
-
-ws.on('open', (event) => {
-    console.log("websocket connect!")
-})
-
-// 得到识别结果后进行处理，仅供参考，具体业务具体对待
-ws.on('message', (data, err) => {
-    if (err) {
-        console.log(`err:${err}`)
-        return
-    }
-    res = JSON.parse(data)
-    if (res.code != 0) {
-        console.log(`error code ${res.code}, reason ${res.message}`)
-        return
-    }
-
-    if (res.data.status == 2) {
-        const { data } = res.data
-        let b = new Buffer(data, 'base64')
-        let grade = parser.parse(b.toString(), {
-            attributeNamePrefix: '',
-            ignoreAttributes: false
-        })
-        console.log(grade);
-        // console.log(grade.xml_result.read_sentence.rec_paper);
-    }
-})
-
-function getAuthStr(date) {
-    let signatureOrigin = `host: ${config.host}\ndate: ${date}\nGET ${config.uri} HTTP/1.1`;
-    let signatureSha = CryptoJS.HmacSHA256(signatureOrigin, config.apiSecret);
-    let signature = CryptoJS.enc.Base64.stringify(signatureSha);
-    let authorizationOrigin = `api_key="${config.apiKey}", algorithm="hmac-sha256", headers="host date request-line", signature="${signature}"`;
-    let authStr = CryptoJS.enc.Base64.stringify(CryptoJS.enc.Utf8.parse(authorizationOrigin));
-    return authStr;
-}
-
-// 传输数据
-function send(data) {
-    let frame = "";
-    switch (status) {
-        case FRAME.STATUS_FIRST_FRAME:
-            // 第一次数据发送：
-            frame = {
-                "common": { app_id: config.appid },
-                "business": {
-                    // 	服务类型指定 ise(开放评测)
-                    "sub": "ise",
-                    // 中文：cn_vip 英文：en_vip
-                    "ent": "en_vip",
-                    // 题型：句子朗读
-                    "category": "read_sentence",
-                    // 待评测文本编码 utf-8
-                    "text": `[content]\n${"I don't know."}`,
-                    // 待评测文本编码 utf-8 gbk
-                    "tte": "utf-8",
-                    // 跳过ttp直接使用ssb中的文本进行评测（使用时结合cmd参数查看）,默认值true
-                    "ttp_skip": true,
-                    "cmd": "ssb",
-                    "aue": "lame",
-                    "auf": "audio/L16;rate=16000",
-                    "rst": "plain"
-                },
-                "data": { "status": 0 }
-            }
-            ws.send(JSON.stringify(frame))
-            // 后续数据发送
-            frame = {
-                "common": { "app_id": config.appid },
-                "business": { "aus": 1, "cmd": "auw", "aue": "lame" },
-                "data": { "status": 1, "data": data.toString('base64') }
-            }
-            status = FRAME.STATUS_CONTINUE_FRAME;
-            break;
-        case FRAME.STATUS_CONTINUE_FRAME:
-            frame = {
-                "common": { "app_id": config.appid },
-                "business": { "aus": 2, "cmd": "auw", "aue": "lame" },
-                "data": { "status": 1, "data": data.toString('base64') }
-            }
-            break;
-        case FRAME.STATUS_LAST_FRAME:
-            frame = {
-                "common": { "app_id": config.appid },
-                "business": { "aus": 4, "cmd": "auw", "aue": "lame" },
-                "data": { "status": 2, "data": data.toString('base64') }
-            }
-            break;
-    }
-    ws.send(JSON.stringify(frame))
-}
-
-// 调用接口
-function sendRec(src) {
-    let readerStream = fs.createReadStream(src, {
-        highWaterMark: config.highWaterMark
-    });
-    readerStream.on('data', function (chunk) {
-        send(chunk)
-    });
-    // 最终帧发送结束
-    readerStream.on('end', function () {
-        status = FRAME.STATUS_LAST_FRAME
-        send("")
-    });
-}
-
 const {
     mongodb,
     ObjectId
@@ -559,13 +429,15 @@ async function startShadowGame(room) {
         .map(player => { // 增加游戏所需属性
             return {
                 ...player,
-                sentences: []
+                scores: [],
+                recordings: [],
+                finished: false
             }
         })
     let allSentences = await mongodb.col('sentences').find().toArray();
     let sentences = allSentences[Math.floor(allSentences.length * Math.random())].sentences;
     let game = {
-        state: "preparing",
+        round: 0,
         players,
         sentences,
         finishCount: 0,
@@ -574,6 +446,40 @@ async function startShadowGame(room) {
     return game;
 }
 
+function updateGamePlayers(msg, ws) {
+    // msg = {
+    //     type: "updateGamePlayers",
+    //     data: {
+    //         userId: '',
+    //         score: '',
+    //         recording: ''
+    //     }
+    // }
+    let { userId, score, recording } = msg.data;
+    let room = rooms[ws.hallType].playingRooms[ws.roomId];
+    let players = room.game.players;
+    let player = players.find(p => p._id === userId);
+    player.scores.push(score);
+    player.recordings.push(recording);
+    if (!player.finished) {
+        player.finished = true;
+        room.game.finishCount ++;
+    }
+    if (room.game.finishCount === 2) {
+        players.forEach(p => p.finished = false);
+        room.game.finishCount = 0;
+        room.game.round ++;
+    }
+    roomBroadcast(room, {
+        type: 'update',
+        key: 'game',
+        data: {
+            game: room.game
+        }
+    })
+
+
+}
 // 更新game的相关信息，如player.records录音数据，player.isAlive的情况等
 function updateGameState(msg, ws) {
     // msg = {
@@ -957,6 +863,7 @@ module.exports = {
     initializeGame,
     // 消息相关
     sendRoomMessage,
+    updateGamePlayers,
     updateGameState,
     updatePlayerRecords,
     updatePlayerInfo,
