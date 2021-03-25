@@ -1,153 +1,223 @@
 <template>
-    <div>
-        <!-- 通知栏 -->
-        <van-notice-bar color="#ff4101" left-icon="volume-o" :text="noticeText" />
-        <!-- 问题 -->
-        <div class="question">
-            <p class="sentence">{{sentences[number].sentence}}</p>
-            <!-- 点击音频按钮播放音频 -->
-            <van-icon name="volume-o" class="play" @click="playAudio()"/>
-            <!-- 这个按钮模仿打分功能 -->
-            <van-button @click="getScore()">打分吧</van-button>
-            <p class="Sscore">score: {{score}}</p>
-        </div>
-        <!-- 玩家自己 -->
-        <div class="player1">
-            <!-- 用户信息 -->
-            <div class="user">
-                <img class="player" :src="userInfo.avatarUrl" alt />
-                <p class="name">{{userInfo.nickName}}</p>
-            </div>
-            <!-- 用户得分 -->
-            <van-progress 
-                class="score1" 
-                :pivot-text="Fscore" 
-                color="#ff4101" 
-                :percentage="percentage"
-                stroke-width="10"
-            />
-        </div>
-
-        <!-- 对手 -->
-        <div class="player2">
-            <!-- 用户信息 -->
-            <div class="user">
-                <img class="player" :src="opponent.avatarUrl" alt />
-                <p class="name">{{opponent.nickName}}</p>
-            </div>
-            <!-- 用户得分 -->
-            <van-progress 
-                class="score1" 
-                :pivot-text="Fscore" 
-                color="#ff4101" 
-                :percentage="percentage"
-                stroke-width="10"
-            />
-        </div>
-
-        <van-toast id="van-toast" />
+  <div>
+    <!-- 通知栏 -->
+    <van-notice-bar color="#ff4101" left-icon="volume-o" :text="noticeText" />
+    <!-- 问题 -->
+    <!-- <div class="question">
+      <h2>Round {{ round + 1 }}</h2>
+      <template v-if="showResult">
+        <p class="sentence">{{ sentences[round].sentence }}</p>
+        <van-progress
+          class="score1"
+          :pivot-text="Fscore"
+          color="#40b883"
+          :percentage="percentage"
+        />
+      </template>
+    </div> -->
+    <!-- 玩家自己 -->
+    <div class="player1">
+      <!-- 用户信息 -->
+      <div class="user">
+        <img class="player" :src="userInfo.avatarUrl" alt />
+        <p class="name">{{ userInfo.nickName }}</p>
+      </div>
+      <!-- 用户总分 -->
+      <van-progress
+        :pivot-text="playerTotalScore"
+        color="#40b883"
+        :percentage="playerTotalScore"
+      />
     </div>
+
+    <!-- 对手 -->
+    <div class="player2">
+      <!-- 对手信息 -->
+      <div class="user">
+        <img class="player" :src="opponent.avatarUrl" alt />
+        <p class="name">{{ opponent.nickName }}</p>
+      </div>
+      <!-- 对手得分 -->
+      <van-progress
+        :pivot-text="opponentTotalScore"
+        color="#40b883"
+        :percentage="opponentTotalScore"
+      />
+    </div>
+
+    <!-- 结果 -->
+    <gameResult
+      v-if="isEnded"
+      :players="players"
+      :sentences="sentences"
+    ></gameResult>
+
+    <van-popup
+      :show="showRecordingDialog"
+      :close-on-click-overlay="false"
+      position="bottom"
+    >
+      <van-button color="#ff6600" block @click="stopRecord">
+        结束录音 {{ timerCount }}s
+      </van-button>
+    </van-popup>
+
+    <van-toast id="van-toast" />
+  </div>
 </template>
 
 <script>
 import Toast from "../../wxcomponents/vant/toast/toast";
+import gameResult from "../../components/gameResult.vue";
 import { mapState, mapGetters, mapMutations } from "vuex";
-const innerAudioContext = uni.createInnerAudioContext();
-innerAudioContext.autoplay = true;
+const recorderManager = uni.getRecorderManager();
+const audio = uni.createInnerAudioContext();
+audio.autoplay = true;
 
 export default {
-  name: 'Player2',
-    data() {
-        return{
-            number: 0, //当前句子在数组中的顺序，0代表第一个句子
-            score: 0, //当前句子得分
-            Tscore: 0, //这一轮之前的得分
-            Fscore: 0, //最终得分
-            percentage: 0, //进度条的进度
-        }
+  name: "Player2",
+  components: {
+    gameResult,
+  },
+  data() {
+    return {
+      score: 0, //当前句子得分
+      percentage: 0, //进度条的进度
+      showRecordingDialog: false,
+      timerCount: 10,
+      timer: null,
+      isEnded: false,
+    };
+  },
+  computed: {
+    ...mapState(["game", "userInfo"]),
+    ...mapGetters(["players", "player", "opponent", "sentences", "round"]),
+    playerTotalScore() {
+      return Math.ceil(this.player.scores.reduce(this.sum, 0) / 5);
     },
-    computed: {
-        ...mapState(["game", "userInfo",]),
-        ...mapGetters(["players", "player", "opponent", "sentences"]),
+    opponentTotalScore() {
+      return Math.ceil(this.opponent.scores.reduce(this.sum, 0) / 5);
     },
-    async mounted() {
-
-    },
-    methods: {
-        playAudio() {
-            innerAudioContext.src = this.sentences[this.number].audioUrl;;
-            innerAudioContext.play();
-            innerAudioContext.onPlay(() => {
-                console.log('开始播放');
-            });
-            innerAudioContext.onError((res) => {
-                console.log(res.errMsg);
-                console.log(res.errCode);
-            });
+  },
+  methods: {
+    sum: (a, b) => a + b,
+    preparing() {
+      Toast({
+        duration: 3000,
+        message: "Please listen to the audio once before you start to record",
+        onClose: () => {
+          // 加载页面后首先播放句子录音
+          console.log(this.round);
+          audio.src = this.sentences[this.round].audioUrl;
         },
-        // nextSen() {
-        //     if(this.number !== this.sentences.length-1){
-        //         this.number++;
-        //         this.score = 0;
-        //         this.Tscore = this.Fscore;
-        //     } else {
-        //         Toast('This is the last sentence!');
-        //     }
-        // },
-        // 给用户的录音打分，需要调用打分API
-        getScore() {
-            this.score = 100;//这个分数是系统给的分，每次可能不同
-            this.Fscore = this.Tscore + this.score;
-            this.percentage = this.Fscore/5
+      });
+    },
+    startRecord() {
+      this.showRecordingDialog = true;
+      recorderManager.start({
+        duration: 10000,
+        format: "mp3",
+        sampleRate: 16000,
+        numberOfChannels: 1,
+      });
+      Toast({
+        duration: 0,
+        message: "录音中...",
+      });
+      this.timerCount = 10;
+      let timer = setInterval(() => {
+        this.timerCount--;
+        if (this.timerCount == 0) {
+          clearInterval(timer);
+          this.stopRecord();
         }
-    }
-}
+      }, 1000);
+    },
+    // 结束录音
+    stopRecord() {
+      Toast.clear();
+      recorderManager.stop();
+      this.showRecordingDialog = false;
+    },
+  },
+  watch: {
+    round(n) {
+      if (n) {
+        if (n < 5) {
+          Toast.clear();
+          this.preparing();
+        } else {
+          this.isEnded = true;
+        }
+      }
+    },
+  },
+  async onLoad() {
+    this.preparing();
+
+    audio.onEnded(() => {
+      this.startRecord();
+    });
+
+    recorderManager.onStop(async (res) => {
+      const [err, data] = await this.$util.uploadAudio(
+        res.tempFilePath,
+        this.sentences[this.round].sentence
+      );
+      let { score, audioSrc } = JSON.parse(data.data); //获取打分api的分数
+      this.$util.updateGamePlayers(score, audioSrc);
+      Toast({
+          message: 'waiting for the other player',
+          duration: 0
+      })
+    });
+  },
+};
 </script>
 
 <style lang="scss" scoped>
-.question{
-    position: relative;
-    height: 25vh;
-    margin: 0 auto 10px auto;
-    padding: 10px 10px;
-    text-align: center;
-    background-color: burlywood;
-    .sentence {
-        font-size: x-large  
-    }
-    .play {
-        position: absolute;
-        left:10%;
-        bottom:10%;
-    }
-    .Sscore {
-        position: absolute;
-        right:10%;
-        bottom:10%;
-    }
+.question {
+  position: relative;
+  height: 25vh;
+  margin: 0 auto 10px auto;
+  padding: 10px 10px;
+  text-align: center;
+  background-color: burlywood;
+  .sentence {
+    font-size: x-large;
+  }
+  .play {
+    position: absolute;
+    left: 10%;
+    bottom: 10%;
+  }
+  .Sscore {
+    position: absolute;
+    right: 10%;
+    bottom: 10%;
+  }
 }
 
-.player1, .player2 {
-    margin: 5% 5%;
-    padding: 5% 5%;
-    border: 1px solid;
-    .user {
-        display: flex;
-        align-items: center;
-        // margin-left:10px;
-        margin-bottom: 20px;
-        img {
-        width: 18vw;
-        height: 18vw;
-        border-radius: 50%;
-        }
-        .name {
-        font-size: 16px;
-        font-weight: 700;
-        margin-left:10px;
-        }
+.player1,
+.player2 {
+  margin: 5% 5%;
+  padding: 5% 5%;
+  border: 1px solid;
+  .user {
+    display: flex;
+    align-items: center;
+    // margin-left:10px;
+    margin-bottom: 20px;
+    img {
+      width: 18vw;
+      height: 18vw;
+      border-radius: 50%;
     }
+    .name {
+      font-size: 16px;
+      font-weight: 700;
+      margin-left: 10px;
+    }
+  }
 }
-
-
 </style>
