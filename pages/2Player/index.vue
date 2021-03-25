@@ -7,7 +7,6 @@
             <p class="sentence">{{sentences[number].sentence}}</p>
             <!-- 点击音频按钮播放音频 -->
             <van-icon name="volume-o" class="play" @click="playAudio()"/>
-            <audio ref="audio" :src="audioUrl"></audio>
             <!-- 这个按钮模仿打分功能 -->
             <van-button @click="getScore()">打分吧</van-button>
             <p class="Sscore">score: {{score}}</p>
@@ -22,9 +21,9 @@
             <!-- 用户得分 -->
             <van-progress 
                 class="score1" 
-                pivot-text="score" 
+                :pivot-text="Fscore" 
                 color="#ff4101" 
-                percentage="25"
+                :percentage="percentage"
                 stroke-width="10"
             />
         </div>
@@ -33,15 +32,15 @@
         <div class="player2">
             <!-- 用户信息 -->
             <div class="user">
-                <img class="player" :src="userInfo.avatarUrl" alt />
-                <p class="name">{{userInfo.nickName}}</p>
+                <img class="player" :src="opponent.avatarUrl" alt />
+                <p class="name">{{opponent.nickName}}</p>
             </div>
             <!-- 用户得分 -->
             <van-progress 
                 class="score1" 
-                pivot-text="score" 
+                :pivot-text="Fscore" 
                 color="#ff4101" 
-                percentage="25"
+                :percentage="percentage"
                 stroke-width="10"
             />
         </div>
@@ -53,55 +52,38 @@
 <script>
 import Toast from "../../wxcomponents/vant/toast/toast";
 import { mapState, mapGetters, mapMutations } from "vuex";
+const innerAudioContext = uni.createInnerAudioContext();
+innerAudioContext.autoplay = true;
 
 export default {
   name: 'Player2',
     data() {
         return{
             number: 0, //当前句子在数组中的顺序，0代表第一个句子
-            sentences: [
-                {
-                    sentence: 'The students argued for more time to prepare for the exam.',
-                    audioUrl: '../../static/sentence/01.mp3',
-                },
-                {
-                    sentence: 'This is one of the most deadly poisons known to man.',
-                    audioUrl: '../../static/sentence/02.mp3',
-                },
-                {
-                    sentence: 'Kim picked up the baby and carried her back inside.',
-                    audioUrl: '../../static/sentence/03.mp3',
-                },
-                {
-                    sentence: 'Mum hung up the wet sheets in front of the fire.',
-                    audioUrl: '../../static/sentence/04.mp3',
-                },{
-                    sentence: 'She dropped the glass when she was drying the dishes.',
-                    audioUrl: '../../static/sentence/05.mp3',
-                },
-            ],
-            audioUrl: '../../static/sentence/01.mp3', //当前音频路径
             score: 0, //当前句子得分
             Tscore: 0, //这一轮之前的得分
             Fscore: 0, //最终得分
-            value: 0, //圆形进度条的进度
+            percentage: 0, //进度条的进度
         }
     },
     computed: {
-      ...mapState(['userInfo'])
+        ...mapState(["game", "userInfo",]),
+        ...mapGetters(["players", "player", "opponent", "sentences"]),
     },
-    mounted() {
+    async mounted() {
 
     },
     methods: {
         playAudio() {
-            this.audioUrl = this.sentences[this.number].audioUrl;
-            this.$nextTick(() => {
-                // this.$refs.audio.load() 重新加载
-                console.log(this.$refs.audio) //不知为何调用不了
-            })
-            
-            // this.$refs.audio.play();
+            innerAudioContext.src = this.sentences[this.number].audioUrl;;
+            innerAudioContext.play();
+            innerAudioContext.onPlay(() => {
+                console.log('开始播放');
+            });
+            innerAudioContext.onError((res) => {
+                console.log(res.errMsg);
+                console.log(res.errCode);
+            });
         },
         // nextSen() {
         //     if(this.number !== this.sentences.length-1){
@@ -116,7 +98,7 @@ export default {
         getScore() {
             this.score = 100;//这个分数是系统给的分，每次可能不同
             this.Fscore = this.Tscore + this.score;
-            this.value = this.Fscore/5
+            this.percentage = this.Fscore/5
         }
     }
 }

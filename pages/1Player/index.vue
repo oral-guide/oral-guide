@@ -1,15 +1,12 @@
 <template>
     <div>
         <!-- 通知栏 -->
-        <van-notice-bar color="#ff4101" left-icon="volume-o" :text="noticeText" />
+        <!-- <van-notice-bar color="#ff4101" left-icon="volume-o" :text="noticeText" /> -->
         <!-- 问题 -->
         <div class="question">
             <p class="sentence">{{sentences[number].sentence}}</p>
-            <!-- 点击音频按钮播放音频 -->
-            <van-icon name="volume-o" class="play" @click="playAudio()"/>
-            <audio ref="audio" :src="audioUrl"></audio>
             <!-- 这个按钮模仿打分功能 -->
-            <van-button @click="getScore()">打分吧</van-button>
+            <!-- <van-button @click="getScore()">打分吧</van-button> -->
             <p class="Sscore">score: {{score}}</p>
         </div>
         <!-- 用户信息 -->
@@ -22,30 +19,24 @@
             :value="value"
             layer-color="#eeeeee"
             color="#ff4101"
-            size="150"
+            size="200"
             stroke-width="10"
-            :text="Fscore"
+            :text="Tscore"
             class="Tscore"
         />
-        <!-- 两个按钮 -->
-        <div class="button">
-            <!-- 按钮1：重新录音打分 -->
-            <van-button
-                class="button1"
-                color="#ff4101"
-                plain
-            >
-                Try again
+
+        <van-popup
+            :show="showRecordingDialog"
+            :close-on-click-overlay="false"
+            position="bottom"
+        >
+        <!-- <div class="recordMsg">录音中。。。还剩{{ timerCount }}s</div> -->
+            <van-button color="#ff6600" block @click="stopRecord()">
+                结束录音 {{timerCount}}s
             </van-button>
-            <!-- 按钮2：下一题 -->
-            <van-button
-                class="button2"
-                color="#ff4101"
-                @click="nextSen()"
-            >
-                Next
-            </van-button>
-        </div>
+        </van-popup>
+
+        <van-toast id="round" />
         <van-toast id="van-toast" />
     </div>
 </template>
@@ -54,70 +45,138 @@
 import Toast from "../../wxcomponents/vant/toast/toast";
 import { mapState, mapGetters, mapMutations } from "vuex";
 
+const recorderManager = uni.getRecorderManager()
+const audio = uni.createInnerAudioContext()
+audio.autoplay = true
+
+
 export default {
   name: 'Player1',
     data() {
         return{
+            timer: null, // 倒计时
+            timerCount: 10, // 倒计时时间
             number: 0, //当前句子在数组中的顺序，0代表第一个句子
-            sentences: [
-                {
-                    sentence: 'The students argued for more time to prepare for the exam.',
-                    audioUrl: '../../static/sentence/01.mp3',
-                },
-                {
-                    sentence: 'This is one of the most deadly poisons known to man.',
-                    audioUrl: '../../static/sentence/02.mp3',
-                },
-                {
-                    sentence: 'Kim picked up the baby and carried her back inside.',
-                    audioUrl: '../../static/sentence/03.mp3',
-                },
-                {
-                    sentence: 'Mum hung up the wet sheets in front of the fire.',
-                    audioUrl: '../../static/sentence/04.mp3',
-                },{
-                    sentence: 'She dropped the glass when she was drying the dishes.',
-                    audioUrl: '../../static/sentence/05.mp3',
-                },
-            ],
-            audioUrl: '../../static/sentence/01.mp3', //当前音频路径
+            sentences: [],
             score: 0, //当前句子得分
-            Tscore: 0, //这一轮之前的得分
-            Fscore: 0, //最终得分
+            Tscore: 0, //总分
             value: 0, //圆形进度条的进度
+            showRecordingDialog: false, // 录音弹框
         }
     },
     computed: {
-      ...mapState(['userInfo'])
-    },
-    mounted() {
-
+      ...mapState(['userInfo']),
     },
     methods: {
-        playAudio() {
-            this.audioUrl = this.sentences[this.number].audioUrl;
-            this.$nextTick(() => {
-                // this.$refs.audio.load() 重新加载
-                console.log(this.$refs.audio) //不知为何调用不了
+        // 准备
+        preparing() {
+            Toast({
+                duration: 3000,
+                message: " round "+ (this.number + 1),
+                selector: "#round",
+                onClose: () => {
+                    Toast({
+                        duration: 3000,
+                        message: "Please listen to the audio once before you start to record",
+                        selector: "#van-toast",
+                        onClose: () => {
+                            console.log('开始播放音频');
+                            // 加载页面后首先播放句子录音
+                            audio.src = this.sentences[this.number].audioUrl;;
+                            audio.play();
+                            audio.onPlay(() => {
+                                console.log('开始播放');
+                            });
+                            audio.onEnded(() => {
+                                console.log('播放结束');
+                                this.startRecord();
+                            });
+                        },
+                    });
+                }
+            });
+        },
+        // 开始录音
+        startRecord () {
+            console.log('开始录音')
+            this.showRecordingDialog = true;
+            recorderManager.start({
+                duration: 10000,
+                format: "mp3",
+                sampleRate: 16000,
+                numberOfChannels: 1,
+            });
+            Toast({
+                duration: 0,
+                message: "录音中...",
+                selector: "#van-toast",
+            });
+            // setTimeout(() => {
+            //     this.showRecordingDialog = false;
+            // }, 10000);
+            this.timerCount = 10;
+            this.timer = setInterval(() => {
+                this.timerCount--;
+                if (this.timerCount == 0){
+                // 时间到，强制结束录音并上传
+                    // this.showRecordingDialog = false;
+                    this.stopRecord();
+                };
+            },1000);
+
+        },
+        // 结束录音
+        stopRecord () {
+            console.log('结束录音')
+            clearInterval(this.timer);
+            Toast.clear();
+            recorderManager.stop();
+            this.showRecordingDialog = false;
+        },
+        // 上传音频
+        // async uploadAudio(filePath) {
+        // let res = await this.$util.uploadAudio(filePath)
+        // let url = JSON.parse(res[1].data).data.url
+        // this.$util.sendRoomMessage(this.userInfo._id, url)
+        // },
+
+        // nextSen() {
+        //     if(this.number !== this.sentences.length-1){
+        //         this.number++;
+        //         this.score = 0;
+        //         this.Tscore = this.Fscore;
+        //     } else {
+        //         Toast('This is the last sentence!');
+        //     }
+        // },
+
+        async onLoad() {
+            this.sentences = await this.$util.getSentences();// 先获取句子，获取完之后才执行下面的语句
+            this.preparing();
+            // 录音结束后自动进行上传
+            recorderManager.onStop(async res => {
+                const [err, data] = (await this.$util.uploadAudio(res.tempFilePath, this.sentences[this.number].sentence));
+                let score = JSON.parse(data.data).score; //获取打分api的分数
+                console.log(score);
+                this.score = score; 
+                this.Tscore = this.Tscore + this.score;
+                this.value = this.Tscore/5;
+                setTimeout(() => {
+                    //开始下一轮
+                    if(this.number < 4){
+                        this.number ++;
+                        this.score = 0;
+                        this.preparing();
+                    }else {
+                        Toast({
+                            duration: 3000,
+                            message: "You have finished all the sentences",
+                            selector: "#van-toast",
+                        });
+                    };
+                }, 3000);
             })
-            
-            // this.$refs.audio.play();
         },
-        nextSen() {
-            if(this.number !== this.sentences.length-1){
-                this.number++;
-                this.score = 0;
-                this.Tscore = this.Fscore;
-            } else {
-                Toast('This is the last sentence!');
-            }
-        },
-        // 给用户的录音打分，需要调用打分API
-        getScore() {
-            this.score = 100;//这个分数是系统给的分，每次可能不同
-            this.Fscore = this.Tscore + this.score;
-            this.value = this.Fscore/5
-        }
     }
 }
 </script>
@@ -127,16 +186,11 @@ export default {
     position: relative;
     height: 25vh;
     margin: 0 auto 10px auto;
-    padding: 10px 10px;
+    padding: 15px 10px;
     text-align: center;
     background-color: burlywood;
     .sentence {
         font-size: x-large  
-    }
-    .play {
-        position: absolute;
-        left:10%;
-        bottom:10%;
     }
     .Sscore {
         position: absolute;
@@ -148,7 +202,7 @@ export default {
 .user {
     display: flex;
     align-items: center;
-    margin-left:10px;
+    margin-left: 5%;
     img {
       width: 18vw;
       height: 18vw;
@@ -163,17 +217,9 @@ export default {
 
 .Tscore {
     position: relative;
+    top:10%;
     left: 50%;
-    margin-left: -75px;
-}
-
-.button {
-    text-align: center;
-    margin-top: 5%;
-    .button1, .button2 {
-        display: inline;
-        margin: 10%;
-    }
+    margin-left: -100px;
 }
 
 </style>
