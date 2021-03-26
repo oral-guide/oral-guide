@@ -469,14 +469,14 @@ function updateGamePlayers(msg, ws) {
         players.forEach(p => p.finished = false);
         room.game.finishCount = 0;
         room.game.round ++;
+        roomBroadcast(room, {
+            type: 'update',
+            key: 'game',
+            data: {
+                game: room.game
+            }
+        })
     }
-    roomBroadcast(room, {
-        type: 'update',
-        key: 'game',
-        data: {
-            game: room.game
-        }
-    })
 
 
 }

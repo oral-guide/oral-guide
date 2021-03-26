@@ -21,12 +21,12 @@
       <!-- 句子和得分条 -->
       <div v-if="rated">
         <p class="sentence">{{sentences[number].sentence}}</p>
-        <van-progress :pivot-text="score*5" color="#40b883" :percentage="score*5" stroke-width="4" />
+        <van-progress :pivot-text="player.scores[number]" color="#40b883" :percentage="player.scores[number]" stroke-width="4" />
       </div>
     </div>
 
     <!-- 结果 -->
-    <gameResult v-if="isEnded" :players="[player]" :sentences="sentences"></gameResult>
+    <gameResult v-if="isEnded" :players="[{...player, ...userInfo}]" :sentences="sentences"></gameResult>
 
     <!-- 录音界面 -->
     <van-popup :show="showRecordingDialog" :close-on-click-overlay="false" position="bottom">
@@ -49,6 +49,9 @@ audio.autoplay = true;
 
 export default {
   name: "Player1",
+  components: {
+    gameResult,
+  },
   data() {
     return {
       noticeText: "",
