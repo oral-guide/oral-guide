@@ -148,7 +148,8 @@ function send(ws, data, sentence) {
                     "cmd": "ssb",
                     "aue": "lame",
                     "auf": "audio/L16;rate=16000",
-                    "rst": "plain"
+                    "rst": "plain",
+                    "sfl": 1
                 },
                 "data": { "status": 0 }
             }

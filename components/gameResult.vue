@@ -20,6 +20,7 @@
           size="40"
           layer-color="#ccc"
         />
+        <div class="block"></div>
         <div class="result_user_avatar">
           <img :src="item.avatarUrl" alt="" />
         </div>
@@ -29,10 +30,10 @@
       <van-divider></van-divider>
       <div class="sentence">
         <van-circle
-          :value="players[0].scores[index]"
+          :value="filteredPlayers[0].scores[index]"
           color="#40b883"
           :clockwise="false"
-          :text="players[0].scores[index]"
+          :text="filteredPlayers[0].scores[index]"
           size="30"
           layer-color="#ccc"
         />
@@ -48,9 +49,9 @@
             size="mini"
             icon="play-circle-o"
             color="#ff4101"
-            @click="play(players[0].recordings[index])"
+            @click="play(filteredPlayers[0].recordings[index])"
           />
-          <div class="block" v-if="index !== 0 && index !== 4"></div>
+          <div class="block" v-if="index !== 0"></div>
           <van-button
             v-if="index > 0"
             size="mini"
