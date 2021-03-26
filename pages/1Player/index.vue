@@ -25,6 +25,7 @@
       </div>
     </div>
 
+    <!-- 结果 -->
     <gameResult v-if="isEnded" :players="[player]" :sentences="sentences"></gameResult>
 
     <!-- 录音界面 -->
@@ -63,7 +64,8 @@ export default {
       player: {
         scores: [],
         recordings: []
-      }
+      },
+      isEnded: false,//游戏是否结束
     };
   },
   computed: {
@@ -76,24 +78,16 @@ export default {
     sum: (a, b) => a + b,
     // 准备
     preparing() {
-      this.noticeText = "Game starts!";
+      this.noticeText = "Preparing stage";
       Toast({
         duration: 3000,
-        message: " round " + (this.number + 1),
-        selector: "#round",
+        message: "Please listen to the audio once before you start to record",
+        selector: "#van-toast",
         onClose: () => {
-          Toast({
-            duration: 3000,
-            message:
-              "Please listen to the audio once before you start to record",
-            selector: "#van-toast",
-            onClose: () => {
-              console.log("开始播放音频");
-              // 加载页面后首先播放句子录音
-              audio.src = this.sentences[this.number].audioUrl;
-            //   audio.play();
-            }
-          });
+          console.log("开始播放音频");
+          // 加载页面后首先播放句子录音
+          audio.src = this.sentences[this.number].audioUrl;
+          //   audio.play();
         }
       });
     },
@@ -155,9 +149,10 @@ export default {
         this.score = Math.ceil(score / 5); //转成20分制
         this.player.scores.push(score);
         this.player.recordings.push(audioSrc);
-        this.rated = true;
+        this.rated = true; //显示打分和句子
         this.Tscore = this.totalScore;
         this.value = this.Tscore;
+        this.noticeText = "Rating stage";
         setTimeout(() => {
           if (this.number < 4) {
             //开始下一轮
@@ -168,11 +163,7 @@ export default {
           } else {
             //游戏结束
             this.noticeText = "Game over";
-            Toast({
-              duration: 3000,
-              message: "You have finished all the sentences",
-              selector: "#van-toast"
-            });
+            this.isEnded = true;
           }
         }, 3000);
       });
@@ -190,8 +181,8 @@ export default {
   height: 50vh;
   text-align: center;
   background-color: burlywood;
-  .round{
-    font-size:xx-large;
+  .round {
+    font-size: xx-large;
     margin: 5% 0 10% 0;
   }
   .sentence {
@@ -226,6 +217,7 @@ export default {
     color: #40b883;
   }
 }
+
 ::v-deep .van-progress__portion {
   transition: 1s;
 }
