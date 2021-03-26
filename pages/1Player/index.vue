@@ -31,7 +31,7 @@
     <!-- 录音界面 -->
     <van-popup :show="showRecordingDialog" :close-on-click-overlay="false" position="bottom">
       <!-- <div class="recordMsg">录音中。。。还剩{{ timerCount }}s</div> -->
-      <van-button color="#ff6600" block @click="stopRecord">结束录音 {{timerCount}}s</van-button>
+      <van-button color="#ff6600" block @click="stopRecord">Stop recording {{timerCount}}s</van-button>
     </van-popup>
 
     <van-toast id="round" />
@@ -104,7 +104,7 @@ export default {
       });
       Toast({
         duration: 0,
-        message: "录音中...",
+        message: "Recording...",
         selector: "#van-toast"
       });
       // setTimeout(() => {

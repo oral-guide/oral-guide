@@ -49,7 +49,7 @@
       <!-- 句子和得分条 -->
       <div v-if="rated">
         <p class="sentence">{{sentences[number].sentence}}</p>
-        <van-progress :pivot-text="score*5" color="#40b883" :percentage="score*5" stroke-width="4" />
+        <van-progress :pivot-text="player.scores[number]" color="#40b883" :percentage="player.scores[number]" stroke-width="4" />
       </div>
     </div>
 
@@ -57,7 +57,7 @@
     <gameResult v-if="isEnded" :players="players" :sentences="sentences"></gameResult>
 
     <van-popup :show="showRecordingDialog" :close-on-click-overlay="false" position="bottom">
-      <van-button color="#ff6600" block @click="stopRecord">结束录音 {{ timerCount }}s</van-button>
+      <van-button color="#ff6600" block @click="stopRecord">Stop recording {{ timerCount }}s</van-button>
     </van-popup>
 
     <van-toast id="van-toast" />
@@ -125,7 +125,7 @@ export default {
       });
       Toast({
         duration: 0,
-        message: "录音中..."
+        message: "Recording..."
       });
       this.timerCount = 10;
       let timer = setInterval(() => {

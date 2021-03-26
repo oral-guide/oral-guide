@@ -19,14 +19,14 @@
     >
       <!-- <div class="recordMsg">录音中。。。还剩{{ timerCount }}s</div> -->
       <van-button color="#ff6600" block @click="endRecord()">
-        提前结束
+        Stop recording
       </van-button>
     </van-popup>
 
     <!-- 投票 -->
     <van-dialog
       use-slot
-      title="请投票"
+      title="Please vote"
       theme="round-button"
       :show-confirm-button="false"
       :show="showVoteDialog"
@@ -76,8 +76,8 @@
                 player._id === p._id
               "
               @click="onVoteChange(p)"
-            >
-              投TA
+            > 
+              Vote
             </van-button>
           </div>
         </li>
@@ -88,13 +88,13 @@
         size="large"
         @click="abstain"
         :disabled="player.voteStatus === 3"
-        >弃票</van-button
+        >Abstain</van-button
       >
     </van-dialog>
 
     <van-dialog
       use-slot
-      title="投票结果"
+      title="Vote result"
       :show-confirm-button="false"
       :show="showResultDialog"
     >
@@ -105,7 +105,7 @@
 
     <van-dialog
       use-slot
-      title="游戏结果"
+      title="Game result"
       :show-confirm-button="false"
       :show="showFinishDialog"
     >
@@ -161,17 +161,17 @@ export default {
     ...mapMutations(["setCurSpeak"]),
     // 准备状态调用的方法，展示倒计时等
     onPreparing(time) {
-      this.noticeText = "准备阶段";
+      this.noticeText = "Preparing stage";
       const toast = Toast({
         duration: 0,
-        message: `离录音开始还有${time}s`,
+        message: `${time}s before recording`,
         selector: "#timer",
       });
       this.timerCount = time;
       this.timer = setInterval(() => {
         this.timerCount--;
         toast.setData({
-          message: `离录音开始还有${this.timerCount}s`,
+          message: `${this.timerCount}s before recording`,
         });
         if (this.timerCount === 0) {
           // 到达30s的时候，开始录音
@@ -206,13 +206,13 @@ export default {
       const toast = Toast({
         duration: 0,
         position: "top",
-        message: `录音中。。。还剩${this.timerCount}s`,
+        message: `${this.timerCount}s left`,
         selector: "#timer",
       });
       this.timer = setInterval(() => {
         this.timerCount--;
         toast.setData({
-          message: `录音中。。。还剩${this.timerCount}s`,
+          message: `${this.timerCount}s left`,
         });
         if (this.timerCount === 0) {
           // 时间到，强制结束录音并上传
@@ -233,7 +233,7 @@ export default {
       // 等待其他玩家
       Toast({
         duration: 0,
-        message: "等待其他玩家录音中...",
+        message: "waiting for the other player",
         selector: "#timer",
       });
       // 上传录音
@@ -265,7 +265,7 @@ export default {
       console.log(
         `onplaying: 当前speaker ID ${this.curSpeak}, 当前序号：${this.curIndex}`
       );
-      this.noticeText = `当前发言玩家：【${
+      this.noticeText = `Speaker：【${
         this.players[this.curIndex].nickName
       }】`;
       // 改变当前玩家isSpeaking状态为true
@@ -285,12 +285,12 @@ export default {
         Toast.loading({
           duration: 0,
           forbidClick: true,
-          message: "开始投票",
+          message: "Voting starts",
           selector: "#timer",
         });
         return;
       }
-      this.noticeText = `当前发言玩家：【${
+      this.noticeText = `Speaker：【${
         this.players[this.curIndex].nickName
       }】`;
       // audio.src = this.audioSrcList[this.curIndex].url;
@@ -328,7 +328,7 @@ export default {
     },
     // 选择弃票
     abstain() {
-      console.log(`${this.player.nickName}选择了弃票`);
+      console.log(`${this.player.nickName} abstained`);
       this.$util.vote(null);
     },
   },
@@ -341,7 +341,7 @@ export default {
           if (!this.round) {
             // 首轮
             this.onPreparing(3);
-            this.noticeText = "准备环节";
+            this.noticeText = "Preparing stage";
           } else {
             // 非首轮，投票结果判断
             if (this.game.voteResult.length === 1) {
@@ -350,7 +350,7 @@ export default {
                 (player) => player._id === this.game.voteResult[0]
               );
               let identity = player.isSpy ? "卧底" : "平民";
-              this.resultDialogText = `${player.nickName}得票数最多被淘汰出局，TA的身份是${identity}。`;
+              this.resultDialogText = `${player.nickName}got the most votes and was eliminated. They are ${identity}。`;
               this.showResultDialog = true;
               setTimeout(() => {
                 this.showResultDialog = false;
@@ -386,7 +386,7 @@ export default {
                 // 游戏结束
                 setTimeout(() => {
                   this.showFinishDialog = true;
-                  this.finishDialogText = `恭喜【${winner}】玩家${winners}获得胜利！`;
+                  this.finishDialogText = `Congratulations!【${winner}】${winners} win！`;
                 }, 3000);
               } else {
                 // 游戏继续
@@ -395,7 +395,7 @@ export default {
             } else if (this.game.voteResult.length > 1) {
               // 多个玩家
               this.resultDialogText =
-                "有两个或以上玩家得票数相同，请重新投票！";
+                "Two or more players have the same number of votes, please vote again!";
               this.showResultDialog = true;
               setTimeout(() => {
                 this.showResultDialog = false;
@@ -408,7 +408,7 @@ export default {
             } else {
               // 重新投
               this.resultDialogText =
-                "本轮所有玩家弃票，无人出局，请重新投票！";
+                "All players abstained this round. No one is out. Please vote again!";
               this.showResultDialog = true;
               setTimeout(() => {
                 this.showResultDialog = false;
@@ -424,7 +424,7 @@ export default {
         case "recording":
           this.onRecording(5);
           // console.log(this.gameState);
-          this.noticeText = "全体录音中";
+          this.noticeText = "Recording stage";
           break;
         case "playing":
           // 全体录音结束
@@ -437,7 +437,7 @@ export default {
           Toast.clear();
           console.log("voting starts");
           this.onVoting();
-          this.noticeText = "投票环节";
+          this.noticeText = "Voting stage";
           break;
       }
     },
