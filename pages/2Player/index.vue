@@ -33,7 +33,7 @@
       <div class="user">
         <img class="player" :src="opponent.avatarUrl" alt />
         <p class="name">{{ opponent.nickName }}</p>
-        <div v-if="rated" class="rating">+{{score}}</div>
+        <div v-if="rated" class="rating">+{{Math.ceil(opponent.scores[number]/5)}}</div>
       </div>
       <!-- 对手得分 -->
       <van-progress
@@ -49,7 +49,7 @@
       <!-- 句子和得分条 -->
       <div v-if="rated">
         <p class="sentence">{{sentences[number].sentence}}</p>
-        <van-progress :pivot-text="score*5" color="#40b883" :percentage="score*5" stroke-width="4" />
+        <van-progress :pivot-text="player.scores[number]" color="#40b883" :percentage="player.scores[number]" stroke-width="4" />
       </div>
     </div>
 
@@ -57,7 +57,7 @@
     <gameResult v-if="isEnded" :players="players" :sentences="sentences"></gameResult>
 
     <van-popup :show="showRecordingDialog" :close-on-click-overlay="false" position="bottom">
-      <van-button color="#ff6600" block @click="stopRecord">结束录音 {{ timerCount }}s</van-button>
+      <van-button color="#ff6600" block @click="stopRecord">Stop recording {{ timerCount }}s</van-button>
     </van-popup>
 
     <van-toast id="van-toast" />
@@ -125,7 +125,7 @@ export default {
       });
       Toast({
         duration: 0,
-        message: "录音中..."
+        message: "Recording..."
       });
       this.timerCount = 10;
       let timer = setInterval(() => {
@@ -148,6 +148,7 @@ export default {
       if (n) {
         if (n < 5) {
           Toast.clear();
+          this.rated = true;
           setTimeout(() => {
             this.rated = false;
             this.preparing();
@@ -174,8 +175,8 @@ export default {
         this.sentences[this.round].sentence
       );
       let { score, audioSrc } = JSON.parse(data.data); //获取打分api的分数
-      this.score = score;
-      this.rated = true;
+      this.score = Math.ceil(score / 5); //转成20分制
+    //   this.rated = true;
       this.$util.updateGamePlayers(score, audioSrc);
       Toast({
         message: "waiting for the other player",
@@ -203,6 +204,7 @@ export default {
 
 .player1,
 .player2 {
+  position: relative;
   margin: 5% 5%;
   padding: 5% 5%;
   border: 1px solid;
@@ -221,6 +223,11 @@ export default {
       font-weight: 700;
       margin-left: 10px;
     }
+  }
+  .rating {
+    position: absolute;
+    right: 5%;
+    color: #40b883;
   }
 }
 
