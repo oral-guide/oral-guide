@@ -19,7 +19,7 @@
           <img src="../../static/gameHall/lock_logo.png" class="lock" v-if="item.pswd.length>0" alt="">
         </div>
         <div class="hall_room_r">
-          <p :class="item.isPlaying?'start':''">{{item.isPlaying?'已开始':'准备中'}}</p>
+          <p :class="item.isPlaying?'start':''">{{item.isPlaying?'Playing':'Waiting'}}</p>
           <p>{{`${item.players.length} / ${item.seats}`}}</p>
         </div>
       </div>
@@ -32,6 +32,8 @@
         show-cancel-button
         @confirm="confirmAdd"
         @cancel="hideAddDialog"
+        confirm-button-text="Confirm"
+        cancel-button-text="Cancel"
       >
         <van-cell-group>
           <van-field
@@ -66,6 +68,8 @@
         show-cancel-button
         @confirm="confirmEnter"
         @cancel="hideEnterDialog"
+        confirm-button-text="Confirm"
+        cancel-button-text="Cancel"
       >
         <van-cell-group>
           <van-field

@@ -349,7 +349,7 @@ export default {
               let player = this.players.find(
                 (player) => player._id === this.game.voteResult[0]
               );
-              let identity = player.isSpy ? "卧底" : "平民";
+              let identity = player.isSpy ? "Spy" : "Civilian";
               this.resultDialogText = `${player.nickName}got the most votes and was eliminated. They are ${identity}。`;
               this.showResultDialog = true;
               setTimeout(() => {
@@ -379,7 +379,7 @@ export default {
 
               if (gameEnd) {
                 console.log("结束！");
-                let winner = player.isSpy ? "平民" : "卧底";
+                let winner = player.isSpy ? "Civilian" : "Spy";
                 let winners = this.players
                   .filter((p) => (player.isSpy ? !p.isSpy : p.isSpy))
                   .reduce((acc, cur) => `${acc}【${cur.nickName}】`, "");

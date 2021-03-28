@@ -43,12 +43,6 @@
 			}
 		},
 		{
-			"path": "pages/myFriend/index",
-			"style": {
-				"navigationBarTitleText": "Friends"
-			}
-		},
-		{
 			"path": "pages/Home/index",
 			"style": {
 				"navigationBarTitleText": "Me"
@@ -101,19 +95,13 @@
 		"list": [
 			{
 				"pagePath": "pages/Index/index",
-				"text": "首页",
+				"text": "Home",
 				"iconPath": "static/tabbar/index.png",
 				"selectedIconPath": "static/tabbar/index-active.png"
 			},
 			{
-				"pagePath": "pages/myFriend/index",
-				"text": "通讯录",
-				"iconPath": "static/tabbar/friend.png",
-				"selectedIconPath": "static/tabbar/friend-active.png"
-			},
-			{
 				"pagePath": "pages/Home/index",
-				"text": "我",
+				"text": "Me",
 				"iconPath": "static/tabbar/me.png",
 				"selectedIconPath": "static/tabbar/me-active.png"
 			}

@@ -14,12 +14,14 @@
     </van-skeleton>
     <van-dialog
       :show="showAuth"
-      title="提示"
-      message="当前尚未进行用户授权，请先进行授权~"
+      title="Tips"
+      message="Please authorize first before you play~"
       id="van-dialog"
       confirm-button-open-type="getUserInfo"
       @getuserinfo="getUserInfo"
       lang="zh_CN"
+      confirm-button-text="Confirm"
+        cancel-button-text="Cancel"
     >
     </van-dialog>
   </div>

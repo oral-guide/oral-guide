@@ -7,7 +7,7 @@
       size="large"
       @click="$emit('toggleShow')"
     >
-      查看单词
+      Toggle word
     </van-button>
     <!-- 单词提示框 -->
     <van-popup

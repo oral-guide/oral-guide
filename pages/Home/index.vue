@@ -3,10 +3,10 @@
   <div class="login">
 		<userPanel></userPanel>
     <van-cell-group>
-      <van-cell title="对战记录" icon="fire-o" is-link />
-      <van-cell title="邀请好友" icon="friends-o" />
-      <van-cell title="意见反馈" icon="edit" />
-      <van-cell title="设置" icon="setting-o" />
+      <van-cell title="History" icon="fire-o" is-link />
+      <van-cell title="Invite Friends" icon="friends-o" />
+      <van-cell title="Feedback" icon="edit" />
+      <van-cell title="Settings" icon="setting-o" />
     </van-cell-group>
 	</div>
 </template>
