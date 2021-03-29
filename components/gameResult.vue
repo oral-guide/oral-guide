@@ -65,7 +65,7 @@
             @click="index++"
           />
           <div class="block"></div>
-          <van-button size="mini" color="#ff4101" @click="retry">
+          <van-button size="mini" color="#ff4101" @click="$emit('retry', index)">
             Try Again
           </van-button>
         </div>
@@ -130,9 +130,6 @@ export default {
     play(src) {
       audio.src = src;
       audio.play();
-    },
-    retry() {
-      // 重录
     },
     back() {
       // 生成战绩

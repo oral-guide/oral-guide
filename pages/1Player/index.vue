@@ -23,7 +23,7 @@
     <!-- 问题 -->
     <div class="question">
       <h1 class="round">Round {{ number + 1 }}</h1>
-      <!-- 句子和得分条 -->score
+      <!-- 句子和得分条 -->
       <div v-if="rated">
         <p class="sentence" v-html="sentence"></p>
         <div class="score">
@@ -36,7 +36,7 @@
           />
         </div>
         <div class="score">
-          Accuracy score
+          Accuracy score:
           <van-progress
             :pivot-text="accuracy_score"
             color="#40b883"
@@ -45,7 +45,7 @@
           />
         </div>
         <div class="score">
-          Fluency score 
+          Fluency score: 
           <van-progress
             :pivot-text="fluency_score"
             color="#40b883"
@@ -54,7 +54,7 @@
           />
         </div>
         <div class="score">
-          Standard score
+          Standard score:
           <van-progress
             :pivot-text="standard_score"
             color="#40b883"
@@ -63,7 +63,7 @@
           />
         </div>
         <div class="score">
-          Integrity score
+          Integrity score:
           <van-progress
             :pivot-text="integrity_score"
             color="#40b883"
@@ -76,9 +76,10 @@
 
     <!-- 结果 -->
     <gameResult
-      v-if="isEnded"
+      :show="showResultDialog"
       :players="[{ ...player, ...userInfo }]"
       :sentences="sentences"
+      @retry="retry"
     ></gameResult>
 
     <!-- 录音界面 -->
@@ -135,6 +136,7 @@ export default {
         recordings: [],
       },
       isEnded: false, //游戏是否结束
+      showResultDialog: false, //结果弹框
     };
   },
   computed: {
@@ -176,9 +178,34 @@ export default {
         message: "Recording...",
         selector: "#van-toast",
       });
-      // setTimeout(() => {
-      //     this.showRecordingDialog = false;
-      // }, 10000);
+      this.timerCount = 10;
+      let timer = setInterval(() => {
+        this.timerCount--;
+        if (this.timerCount == 0) {
+          // 时间到，强制结束录音并上传
+          clearInterval(timer);
+          this.stopRecord();
+        }
+      }, 1000);
+    },
+    //重新录音
+    retry(index) {
+      this.number = index;
+      console.log(this.number)
+      console.log("重新开始录音");
+      this.showResultDialog = false;
+      this.showRecordingDialog = true;
+      recorderManager.start({
+        duration: 10000,
+        format: "mp3",
+        sampleRate: 16000,
+        numberOfChannels: 1,
+      });
+      Toast({
+        duration: 0,
+        message: "Recording...",
+        selector: "#van-toast",
+      });
       this.timerCount = 10;
       let timer = setInterval(() => {
         this.timerCount--;
@@ -192,10 +219,12 @@ export default {
     // 结束录音
     stopRecord() {
       console.log("结束录音");
-
       Toast.clear();
       recorderManager.stop();
       this.showRecordingDialog = false;
+      if(this.isEnded) {
+        this.showResultDialog = true;
+      }
     },
 
     async onLoad() {
@@ -246,9 +275,9 @@ export default {
           }
           if (index === words.length - 1) {
             this.sentence = this.sentence.trim() + '.';
-            this.sentence = this.sentence[0].toUpperCase() + this.sentence.slice(1);
           }
         })
+        this.sentence = this.sentence[0].toUpperCase() + this.sentence.slice(1);
 
         this.score = Math.ceil(total_score / 5); //转成20分制
         this.accuracy_score = accuracy_score;
@@ -262,19 +291,23 @@ export default {
         this.Tscore = this.totalScore;
         this.value = this.Tscore;
         this.noticeText = "Rating stage";
-        setTimeout(() => {
-          if (this.number < 4) {
-            //开始下一轮
-            this.number++;
-            this.score = 0;
-            this.rated = false;
-            this.preparing();
-          } else {
-            //游戏结束
-            this.noticeText = "Game over";
-            this.isEnded = true;
-          }
-        }, 5000);
+
+        if(!this.isEnded){
+          setTimeout(() => {
+            if (this.number < 4) {
+              //开始下一轮
+              this.number++;
+              this.score = 0;
+              this.rated = false;
+              this.preparing();
+            } else {
+              //游戏结束
+              this.noticeText = "Game over";
+              this.isEnded = true;
+              this.showResultDialog = true;
+            }
+          }, 5000); 
+        };
       });
     },
   },
@@ -285,18 +318,23 @@ export default {
 .question {
   position: relative;
   margin: 5% 5%;
-  padding: 5% 5%;
+  padding: 5% 10%;
   border: 1px solid;
   height: 50vh;
-  text-align: center;
+  // text-align: center;
   background-color: burlywood;
   .round {
+    text-align: center;
     font-size: x-large;
-    margin: 5% 0 5% 0;
+    margin: 0 0 5% 0;
   }
   .sentence {
-    font-size: x-large;
+    text-align: center;
+    // font-size: x-large;
     margin: 5% 0;
+  }
+  .score {
+    margin:15px 0;
   }
 }
 
