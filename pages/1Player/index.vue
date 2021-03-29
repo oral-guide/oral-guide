@@ -25,7 +25,7 @@
       <h1 class="round">Round {{ number + 1 }}</h1>
       <!-- 句子和得分条 -->
       <div v-if="rated">
-        <p class="sentence">{{ sentences[number].sentence }}</p>
+        <p class="sentence" v-html="xxx"></p>
         <van-progress
           :pivot-text="player.scores[number]"
           color="#40b883"
@@ -189,6 +189,19 @@ export default {
         let words = word.filter(w => w.total_score);
         console.log(words); // 单词数组
 
+        let sentence = '';
+        words.forEach((w, index) => {
+          if (w.total_score > 4.5) {
+            sentence = `${sentence}<span style="color: #40b883">${content}</span> `;
+          } else if (w.total_score < 3) {
+            sentence = `${sentence}<span style="color: tomato">${content}</span> `;
+          } else {
+            sentence = `${sentence}${content} `;
+          }
+          if (index === words.length - 1) {
+            sentence = sentence.trim() + '.';
+          }
+        })
 
         this.score = Math.ceil(score / 5); //转成20分制
         this.player.scores.push(score);
