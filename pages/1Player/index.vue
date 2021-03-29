@@ -7,31 +7,51 @@
     <div class="player">
       <div class="userinfo">
         <img :src="userInfo.avatarUrl" alt />
-        <p class="name">{{userInfo.nickName}}</p>
-        <div v-if="rated" class="rating">+{{score}}</div>
+        <p class="name">{{ userInfo.nickName }}</p>
+        <div v-if="rated" class="rating">+{{ score }}</div>
         <!-- 用户这个句子得了多少分 -->
       </div>
       <!-- 用户得分 -->
-      <van-progress :pivot-text="Tscore" color="#40b883" :percentage="value" stroke-width="4" />
+      <van-progress
+        :pivot-text="Tscore"
+        color="#40b883"
+        :percentage="value"
+        stroke-width="4"
+      />
     </div>
 
     <!-- 问题 -->
     <div class="question">
-      <h1 class="round">Round {{ number + 1}}</h1>
+      <h1 class="round">Round {{ number + 1 }}</h1>
       <!-- 句子和得分条 -->
       <div v-if="rated">
-        <p class="sentence">{{sentences[number].sentence}}</p>
-        <van-progress :pivot-text="player.scores[number]" color="#40b883" :percentage="player.scores[number]" stroke-width="4" />
+        <p class="sentence">{{ sentences[number].sentence }}</p>
+        <van-progress
+          :pivot-text="player.scores[number]"
+          color="#40b883"
+          :percentage="player.scores[number]"
+          stroke-width="4"
+        />
       </div>
     </div>
 
     <!-- 结果 -->
-    <gameResult v-if="isEnded" :players="[{...player, ...userInfo}]" :sentences="sentences"></gameResult>
+    <gameResult
+      v-if="isEnded"
+      :players="[{ ...player, ...userInfo }]"
+      :sentences="sentences"
+    ></gameResult>
 
     <!-- 录音界面 -->
-    <van-popup :show="showRecordingDialog" :close-on-click-overlay="false" position="bottom">
+    <van-popup
+      :show="showRecordingDialog"
+      :close-on-click-overlay="false"
+      position="bottom"
+    >
       <!-- <div class="recordMsg">录音中。。。还剩{{ timerCount }}s</div> -->
-      <van-button color="#ff6600" block @click="stopRecord">Stop recording {{timerCount}}s</van-button>
+      <van-button color="#ff6600" block @click="stopRecord"
+        >Stop recording {{ timerCount }}s</van-button
+      >
     </van-popup>
 
     <van-toast id="round" />
@@ -66,16 +86,16 @@ export default {
       showRecordingDialog: false, // 录音弹框
       player: {
         scores: [],
-        recordings: []
+        recordings: [],
       },
-      isEnded: false,//游戏是否结束
+      isEnded: false, //游戏是否结束
     };
   },
   computed: {
     ...mapState(["userInfo"]),
     totalScore() {
       return Math.ceil(this.player.scores.reduce(this.sum, 0) / 5);
-    }
+    },
   },
   methods: {
     sum: (a, b) => a + b,
@@ -91,7 +111,7 @@ export default {
           // 加载页面后首先播放句子录音
           audio.src = this.sentences[this.number].audioUrl;
           //   audio.play();
-        }
+        },
       });
     },
     // 开始录音
@@ -103,12 +123,12 @@ export default {
         duration: 10000,
         format: "mp3",
         sampleRate: 16000,
-        numberOfChannels: 1
+        numberOfChannels: 1,
       });
       Toast({
         duration: 0,
         message: "Recording...",
-        selector: "#van-toast"
+        selector: "#van-toast",
       });
       // setTimeout(() => {
       //     this.showRecordingDialog = false;
@@ -143,12 +163,33 @@ export default {
         this.startRecord();
       });
       // 录音结束后自动进行上传
-      recorderManager.onStop(async res => {
+      recorderManager.onStop(async (res) => {
         const [err, data] = await this.$util.uploadAudio(
           res.tempFilePath,
           this.sentences[this.number].sentence
         );
-        let { score, audioSrc } = JSON.parse(data.data); //获取打分api的分数
+        let {
+          result: {
+            integrity_score,
+            sentence: {
+              accuracy_score,
+              fluency_score,
+              standard_score,
+              total_score,
+              word
+            },
+          },
+          audioSrc,
+        } = JSON.parse(data.data); //获取打分api的分数
+        console.log(accuracy_score); // 准确度
+        console.log(fluency_score); // 流畅度
+        console.log(standard_score); // 标准度
+        console.log(integrity_score); // 完整度
+        console.log(total_score); // 总分
+        let words = word.filter(w => w.total_score);
+        console.log(words); // 单词数组
+
+
         this.score = Math.ceil(score / 5); //转成20分制
         this.player.scores.push(score);
         this.player.recordings.push(audioSrc);
@@ -170,8 +211,8 @@ export default {
           }
         }, 3000);
       });
-    }
-  }
+    },
+  },
 };
 </script>
 

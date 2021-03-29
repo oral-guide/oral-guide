@@ -2,8 +2,8 @@
   <!-- 影子跟读法·模式选择&匹配界面 -->
   <div class="before">
     <div class="before_beforeMatch" v-if="status===0">
-      <van-button block color="#ff4101" icon="friends-o" @click="startMatch">开始匹配</van-button>
-      <van-button block color="#ff4101" plain icon="user-o" @click="back">返回</van-button>
+      <van-button block color="#ff4101" icon="friends-o" @click="startMatch">Start Matching</van-button>
+      <van-button block color="#ff4101" plain icon="user-o" @click="back">Back</van-button>
     </div>
     <div class="before_matching" v-if="status===1">
       <div class="before_matching_anim">

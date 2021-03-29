@@ -106,9 +106,10 @@ function sendAudio(src, sentence, response, audioSrc) {
                 attributeNamePrefix: '',
                 ignoreAttributes: false
             });
-            let score = Math.ceil(grade.FinalResult.total_score.value * 20);
+            // let result = Math.ceil(grade.FinalResult.total_score.value * 20);
+            let result = grade.xml_result.read_sentence.rec_paper.read_chapter;
             response.json({
-                score,
+                result,
                 audioSrc
             });
             ws.close(1000, '正常关闭');
@@ -147,9 +148,9 @@ function send(ws, data, sentence) {
                     "ttp_skip": true,
                     "cmd": "ssb",
                     "aue": "lame",
+                    // "sfl": 1,
                     "auf": "audio/L16;rate=16000",
-                    "rst": "plain",
-                    "sfl": 1
+                    // "rst": "plain"
                 },
                 "data": { "status": 0 }
             }
@@ -217,9 +218,13 @@ app.get('/weapp/login', async (req, res) => {
         await mongodb.col('users').insertOne({
             openid,
             session_key,
-            spy: {},
-            shadow: {},
-            friends: []
+            history: {
+                spy: [],
+                shadow: []
+            },
+            friends: [],
+            lv: 1,
+            exp: 0
         })
     } else {
         // 老用户重新登录，那就更新session_key
