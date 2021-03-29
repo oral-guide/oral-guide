@@ -32,28 +32,28 @@
         show-cancel-button
         @confirm="confirmAdd"
         @cancel="hideAddDialog"
-        confirm-button-text="Confirm"
+        confirm-button-text="Create"
         cancel-button-text="Cancel"
       >
         <van-cell-group>
           <van-field
             :value="roomInfo.name"
             @input="handleInput($event, 'name')"
-            label="Room name"
+            label="Name"
             placeholder="Enter the name of the room"
             required
           />
           <van-field
             :value="roomInfo.pswd"
             @input="handleInput($event, 'pswd')"
-            label="Room password"
+            label="Password"
             placeholder="Enter the password of the room"
             type="password"
           />
           <van-field
             :value="roomInfo.seats"
             @input="handleInput($event, 'seats')"
-            label="Room players"
+            label="Seats"
             placeholder="The number of players should be between 6 to 8"
             required
           />
@@ -68,14 +68,14 @@
         show-cancel-button
         @confirm="confirmEnter"
         @cancel="hideEnterDialog"
-        confirm-button-text="Confirm"
+        confirm-button-text="Join"
         cancel-button-text="Cancel"
       >
         <van-cell-group>
           <van-field
             :value="myPswd"
             @input="handlePswdInput"
-            label="Room password"
+            label="Password"
             placeholder="Enter the password of the room"
             type="password"
           />
@@ -101,7 +101,7 @@ export default {
       isEnter: false,  // 加入房间对话框状态
       // 即将创建房间的信息
       roomInfo: {
-        name: '猜猜谁才是卧底！',
+        name: 'Guess who is the spy',
         pswd: '',
         seats: 8
       },
