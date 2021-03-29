@@ -30,6 +30,7 @@ export default {
 .login {
   height: 100vh;
   padding-top: 20px;
+  box-sizing: border-box;
   background-color: #f8f8f8;
   position: relative;
 

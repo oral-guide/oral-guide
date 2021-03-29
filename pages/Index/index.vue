@@ -15,8 +15,12 @@
       </div>
     </van-skeleton>
 
-    <div class="main" v-if="state">
+    <div class="index_main" v-if="state">
+      <van-button plain icon="arrow-left" color="#ff4101" @click="state = 0">
+        Back
+      </van-button>
       <div
+        class="index_game"
         v-for="(item, i) in gameList[state]"
         :key="i"
         @click="goGameHall(item)"
@@ -24,9 +28,6 @@
         <img :src="item.imgUrl" alt="" />
         <h1>{{ item.name }}</h1>
       </div>
-      <van-button block plain color="#ff4101" @click="state = 0">
-        Back
-      </van-button>
     </div>
 
     <van-dialog
@@ -118,8 +119,15 @@ export default {
 <style lang="scss" scoped>
 .index {
   height: 100vh;
-  padding-top: 20px;
+  padding-top: 40px;
+  box-sizing: border-box;
   background-color: #f8f8f8;
+
+  &_main {
+    ::v-deep .van-button {
+      margin: -20px 0 20px 20px;
+    }
+  }
 
   &_game {
     width: 80vw;
