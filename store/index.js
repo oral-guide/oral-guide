@@ -15,7 +15,20 @@ const store = new Vuex.Store({
         roomMsgs: [], // 等待室的语音聊天记录
         game: null, // 游戏开始后的逻辑都在game对象
         curSpeak: '',    // 当前发言的用户id
-        voteResult: []
+        voteResult: [],
+        ranks: [
+            {},
+            { exp: 0, title: 'Rookie', color: '' },
+            { exp: 100, title: 'Freshman', color: '' },
+            { exp: 500, title: 'Apprentice', color: '' },
+            { exp: 1000, title: 'Intern', color: '' },
+            { exp: 2000, title: 'Master', color: '' },
+            { exp: 5000, title: 'Experienced', color: '' },
+            { exp: 10000, title: 'Adept', color: '' },
+            { exp: 20000, title: 'Proficient', color: '' },
+            { exp: 50000, title: 'Specialist', color: '' },
+            { exp: 100000, title: 'Legend', color: '' }
+        ]
     },
     getters: {
         // curRoom(state) {

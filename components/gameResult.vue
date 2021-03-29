@@ -5,11 +5,8 @@
       :title="title"
       show
       theme="round-button"
-      show-cancel-button
-      cancelButtonText="Back"
-      confirmButtonText="Play again"
-      @cancel="back"
-      @confirm="playAgain"
+      confirmButtonText="Confirm"
+      @confirm="$emit('end')"
     >
       <div class="result_user" v-for="item in filteredPlayers" :key="item._id">
         <van-circle
@@ -67,6 +64,10 @@
             color="#ff4101"
             @click="index++"
           />
+          <div class="block"></div>
+          <van-button size="mini" color="#ff4101" @click="retry">
+            Try Again
+          </van-button>
         </div>
         <div class="content">{{ sentences[index].sentence }}</div>
       </div>
@@ -130,12 +131,19 @@ export default {
       audio.src = src;
       audio.play();
     },
+    retry() {
+      // 重录
+    },
     back() {
+      // 生成战绩
+      
       uni.switchTab({
         url: "/pages/Index/index",
       });
     },
     playAgain() {
+      // 生成战绩
+
       uni.redirectTo({
         url: `/pages/beforeGame/index`,
       });
@@ -184,7 +192,7 @@ export default {
   }
 }
 .btn {
-  float: right;
+  // float: right;
 }
 .sentence {
   padding: 20px;

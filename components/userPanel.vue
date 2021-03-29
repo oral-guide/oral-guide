@@ -2,12 +2,21 @@
   <!-- “我”页面的用户信息面板 -->
   <div class="user">
     <div class="user_l">
-      <img :src="userInfo.avatarUrl||require('../static/home/avatar_default.png')" alt="" />
-      <van-tag type="danger" size="medium">{{userInfo.lv}}</van-tag>
-      {{userInfo.exp}} 
+      <img
+        :src="
+          userInfo.avatarUrl || require('../static/home/avatar_default.png')
+        "
+        alt=""
+      />
     </div>
     <div class="user_m">
-      <p>{{userInfo.nickName||'游客'}}</p>
+      <p>{{ userInfo.nickName || "游客" }}</p>
+      <van-tag type="danger" size="medium">Lv {{ userInfo.lv }}</van-tag>
+      <expProgress
+        v-if="userInfo"
+        :total="ranks[userInfo.lv + 1]"
+        :current="userInfo.exp"
+      ></expProgress>
       <span v-if="!userInfo">点击登陆/注册</span>
     </div>
     <div class="user_r" v-if="!userInfo">
@@ -17,14 +26,17 @@
 </template>
 
 <script>
-import { mapState } from 'vuex'
+import { mapState } from "vuex";
+import expProgress from "./expProgress.vue";
 export default {
-  name: 'userPanel',
-  // props: ['userInfo']
-    computed: {
-      ...mapState(['userInfo'])
-    }
-}
+  name: "userPanel",
+  components: {
+    expProgress,
+  },
+  computed: {
+    ...mapState(["userInfo", "ranks"]),
+  },
+};
 </script>
 
 <style lang="scss" scoped>
