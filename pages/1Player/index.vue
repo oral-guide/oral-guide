@@ -45,7 +45,7 @@
           />
         </div>
         <div class="score">
-          Fluency score: 
+          Fluency score:
           <van-progress
             :pivot-text="fluency_score"
             color="#40b883"
@@ -78,7 +78,7 @@
     <gameResult
       v-if="showResultDialog"
       :players="[{ ...player, ...userInfo }]"
-      :sentences="sentences"
+      :sentences="mapResultSentences"
       @retry="retry"
     ></gameResult>
 
@@ -89,9 +89,9 @@
       position="bottom"
     >
       <!-- <div class="recordMsg">录音中。。。还剩{{ timerCount }}s</div> -->
-      <van-button color="#ff6600" block @click="stopRecord"
-        >Stop recording {{ timerCount }}s</van-button
-      >
+      <van-button color="#ff6600" block @click="stopRecord">
+        Stop recording {{ timerCount }}s
+      </van-button>
     </van-popup>
 
     <van-toast id="round" />
@@ -120,11 +120,11 @@ export default {
       number: 0, //当前句子在数组中的顺序，0代表第一个句子
       sentences: [], //句子
       resultSentences: [], // 传给result组件的sentences
-      sentence: '', // 标注的句子
+      sentence: "", // 标注的句子
       rated: false, //还没打分
       score: 0, //当前句子得分
       Tscore: 0, //总分
-      
+
       accuracy_score: 0, //准确度
       fluency_score: 0, //流畅度
       standard_score: 0, //标准度
@@ -144,6 +144,13 @@ export default {
     ...mapState(["userInfo"]),
     totalScore() {
       return Math.ceil(this.player.scores.reduce(this.sum, 0) / 5);
+    },
+    mapResultSentences() {
+      // resultSentences再结合audioUrl
+      return this.resultSentences.map((s, i) => ({
+        sentence: s,
+        audioUrl: this.sentences[i].audioUrl,
+      }));
     },
   },
   methods: {
@@ -192,7 +199,7 @@ export default {
     //重新录音
     retry(index) {
       this.number = index;
-      console.log(this.number)
+      console.log(this.number);
       console.log("重新开始录音");
       this.showResultDialog = false;
       this.showRecordingDialog = true;
@@ -223,7 +230,7 @@ export default {
       Toast.clear();
       recorderManager.stop();
       this.showRecordingDialog = false;
-      if(this.isEnded) {
+      if (this.isEnded) {
         this.showResultDialog = true;
       }
     },
@@ -252,7 +259,7 @@ export default {
               fluency_score,
               standard_score,
               total_score,
-              word
+              word,
             },
           },
           audioSrc,
@@ -262,9 +269,9 @@ export default {
         standard_score = Math.ceil(standard_score * 20); // 标准度
         integrity_score = Math.ceil(integrity_score * 20); // 完整度
         total_score = Math.ceil(total_score * 20); // 总分
-        let words = word.filter(w => w.total_score); // 单词数组
+        let words = word.filter((w) => w.total_score); // 单词数组
 
-        let sentence = '';
+        let sentence = "";
         words.forEach((w, index) => {
           if (w.total_score > 4.5) {
             sentence = `${sentence}<span style="color: #40b883">${w.content}</span> `;
@@ -274,11 +281,9 @@ export default {
             sentence = `${sentence}${w.content} `;
           }
           if (index === words.length - 1) {
-            sentence = sentence.trim() + '.';
+            sentence = sentence.trim() + ".";
           }
-        })
-
-
+        });
 
         if (!this.isEnded) {
           this.sentence = sentence[0].toUpperCase() + sentence.slice(1);
@@ -316,7 +321,7 @@ export default {
               this.isEnded = true;
               this.showResultDialog = true;
             }
-          }, 5000); 
+          }, 5000);
         } else {
           this.player.scores[this.number] = {
             accuracy_score,
@@ -324,7 +329,7 @@ export default {
             standard_score,
             integrity_score,
             total_score,
-          }
+          };
           this.player.recordings[this.number] = audioSrc;
           this.resultSentences[this.number] = sentence;
         }
@@ -354,7 +359,7 @@ export default {
     margin: 5% 0;
   }
   .score {
-    margin:15px 0;
+    margin: 15px 0;
   }
 }
 
