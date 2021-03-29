@@ -6,8 +6,11 @@
       sticky
       animated
       swipeable
-      type="card"
+      type="line"
+      :border="true"
+      line-width="80px"
       color="#ff4101"
+      title-active-color="#ff4101"
     >
       <van-tab title="Shadow Exercise" name="shadow">
         <div class="main">shadow game</div>

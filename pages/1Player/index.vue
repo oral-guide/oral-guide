@@ -76,7 +76,7 @@
 
     <!-- 结果 -->
     <gameResult
-      :show="showResultDialog"
+      v-if="showResultDialog"
       :players="[{ ...player, ...userInfo }]"
       :sentences="sentences"
       @retry="retry"
@@ -119,6 +119,7 @@ export default {
       timerCount: 10, // 倒计时时间
       number: 0, //当前句子在数组中的顺序，0代表第一个句子
       sentences: [], //句子
+      resultSentences: [], // 传给result组件的sentences
       sentence: '', // 标注的句子
       rated: false, //还没打分
       score: 0, //当前句子得分
@@ -261,38 +262,47 @@ export default {
         standard_score = Math.ceil(standard_score * 20); // 标准度
         integrity_score = Math.ceil(integrity_score * 20); // 完整度
         total_score = Math.ceil(total_score * 20); // 总分
-        let words = word.filter(w => w.total_score);
-        console.log(words); // 单词数组
+        let words = word.filter(w => w.total_score); // 单词数组
 
-        this.sentence = '';
+        let sentence = '';
         words.forEach((w, index) => {
           if (w.total_score > 4.5) {
-            this.sentence = `${this.sentence}<span style="color: #40b883">${w.content}</span> `;
+            sentence = `${sentence}<span style="color: #40b883">${w.content}</span> `;
           } else if (w.total_score < 3) {
-            this.sentence = `${this.sentence}<span style="color: tomato">${w.content}</span> `;
+            sentence = `${sentence}<span style="color: tomato">${w.content}</span> `;
           } else {
-            this.sentence = `${this.sentence}${w.content} `;
+            sentence = `${sentence}${w.content} `;
           }
           if (index === words.length - 1) {
-            this.sentence = this.sentence.trim() + '.';
+            sentence = sentence.trim() + '.';
           }
         })
-        this.sentence = this.sentence[0].toUpperCase() + this.sentence.slice(1);
 
-        this.score = Math.ceil(total_score / 5); //转成20分制
-        this.accuracy_score = accuracy_score;
-        this.fluency_score = fluency_score;
-        this.standard_score = standard_score;
-        this.integrity_score = integrity_score;
 
-        this.player.scores.push(total_score);
-        this.player.recordings.push(audioSrc);
-        this.rated = true; //显示打分和句子
-        this.Tscore = this.totalScore;
-        this.value = this.Tscore;
-        this.noticeText = "Rating stage";
 
-        if(!this.isEnded){
+        if (!this.isEnded) {
+          this.sentence = sentence[0].toUpperCase() + sentence.slice(1);
+          this.score = Math.ceil(total_score / 5); //转成20分制
+          this.accuracy_score = accuracy_score;
+          this.fluency_score = fluency_score;
+          this.standard_score = standard_score;
+          this.integrity_score = integrity_score;
+
+          // 传给子组件的参
+          this.player.scores.push({
+            accuracy_score,
+            fluency_score,
+            standard_score,
+            integrity_score,
+            total_score,
+          });
+          this.player.recordings.push(audioSrc);
+          this.resultSentences.push(sentence);
+
+          this.rated = true; //显示打分和句子
+          this.Tscore = this.totalScore;
+          this.value = this.Tscore;
+          this.noticeText = "Rating stage";
           setTimeout(() => {
             if (this.number < 4) {
               //开始下一轮
@@ -307,7 +317,17 @@ export default {
               this.showResultDialog = true;
             }
           }, 5000); 
-        };
+        } else {
+          this.player.scores[this.number] = {
+            accuracy_score,
+            fluency_score,
+            standard_score,
+            integrity_score,
+            total_score,
+          }
+          this.player.recordings[this.number] = audioSrc;
+          this.resultSentences[this.number] = sentence;
+        }
       });
     },
   },
