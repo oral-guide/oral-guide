@@ -9,23 +9,49 @@
       cancelButtonText="Back"
       :confirmButtonText="type === 'shadow' ? 'Play again' : 'Back'"
       @cancel="back"
-      @confirm="type === 'shadow' ? 'playAgain' : 'back'"
+      @confirm="playAgain"
     >
-        
     </van-dialog>
   </div>
 </template>
 
 <script>
 export default {
-    props: {
-        type: {
-            type: String
-        },
-        params: {
-            type: Object
-        },
+  props: {
+    type: {
+      type: String,
     },
+    params: {
+      type: Object,
+    },
+    num: {
+      type: Number,
+    },
+  },
+  methods: {
+    back() {
+      this.$emit("close");
+      uni.switchTab({
+        url: "/pages/Index/index",
+      });
+    },
+    playAgain() {
+      if (this.type === "spy") {
+        this.back();
+        return;
+      }
+      this.$emit("close");
+      if (this.num === 1) {
+        uni.redirectTo({
+          url: `/pages/1Player/index`,
+        });
+      } else {
+        uni.redirectTo({
+          url: `/pages/beforeGame/index`,
+        });
+      }
+    },
+  },
 };
 </script>
 

@@ -256,6 +256,10 @@ app.get('/weapp/getSentences', async (req, res) => {
     let sentences = allSentences[Math.floor(allSentences.length * Math.random())].sentences;
     res.json({ status: 200, data: { sentences } });
 })
+app.post('/weapp/addFeedback', async (req, res) => {
+    await mongodb.col('feedback').insertOne(req.body)
+    res.json({ status: 200, msg: 'success' });
+})
 
 
 // WebSocket

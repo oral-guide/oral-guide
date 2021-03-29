@@ -234,6 +234,19 @@ async function getSentences() {
     return res.data.data.sentences;
 }
 
+async function addFeedback(content) {
+    let [err, res] = (await uni.request({
+        url: "https://humansean.com:8080/weapp/addFeedback",
+        method: 'POST',
+        data: {
+            name: store.state.userInfo.nickName,
+            content,
+            time: new Date().getTime()
+        }
+    }));
+    if (err) return err;
+}
+
 export default {
     openWebsocket,
     closeWebsocket,
@@ -255,5 +268,7 @@ export default {
     updatePlayerRecords,
     vote,
     // shadow
-    getSentences
+    getSentences,
+
+    addFeedback
 }

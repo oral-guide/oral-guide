@@ -47,6 +47,12 @@
 			"style": {
 				"navigationBarTitleText": "Me"
 			}
+		},
+		{
+			"path": "pages/History/index",
+			"style": {
+				"navigationBarTitleText": "History"
+			}
 		}
 		
 	],
@@ -85,7 +91,10 @@
 			"van-divider": "/wxcomponents/vant/divider/index",
 			"van-skeleton": "/wxcomponents/vant/skeleton/index",
 			"van-circle": "/wxcomponents/vant/circle/index",
-			"van-progress": "/wxcomponents/vant/progress/index"
+			"van-progress": "/wxcomponents/vant/progress/index",
+			"van-tab": "/wxcomponents/vant/tab/index",
+			"van-tabs": "/wxcomponents/vant/tabs/index",
+			"van-share-sheet": "/wxcomponents/vant/share-sheet/index"
 		}
 	},
 	"tabBar": {
