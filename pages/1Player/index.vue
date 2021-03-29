@@ -23,15 +23,54 @@
     <!-- 问题 -->
     <div class="question">
       <h1 class="round">Round {{ number + 1 }}</h1>
-      <!-- 句子和得分条 -->
+      <!-- 句子和得分条 -->score
       <div v-if="rated">
-        <p class="sentence" v-html="xxx"></p>
-        <van-progress
-          :pivot-text="player.scores[number]"
-          color="#40b883"
-          :percentage="player.scores[number]"
-          stroke-width="4"
-        />
+        <p class="sentence" v-html="sentence"></p>
+        <div class="score">
+          Total score：
+          <van-progress
+            :pivot-text="player.scores[number]"
+            color="#40b883"
+            :percentage="player.scores[number]"
+            stroke-width="4"
+          />
+        </div>
+        <div class="score">
+          Accuracy score
+          <van-progress
+            :pivot-text="accuracy_score"
+            color="#40b883"
+            :percentage="accuracy_score"
+            stroke-width="4"
+          />
+        </div>
+        <div class="score">
+          Fluency score 
+          <van-progress
+            :pivot-text="fluency_score"
+            color="#40b883"
+            :percentage="fluency_score"
+            stroke-width="4"
+          />
+        </div>
+        <div class="score">
+          Standard score
+          <van-progress
+            :pivot-text="standard_score"
+            color="#40b883"
+            :percentage="standard_score"
+            stroke-width="4"
+          />
+        </div>
+        <div class="score">
+          Integrity score
+          <van-progress
+            :pivot-text="integrity_score"
+            color="#40b883"
+            :percentage="integrity_score"
+            stroke-width="4"
+          />
+        </div>
       </div>
     </div>
 
@@ -79,9 +118,16 @@ export default {
       timerCount: 10, // 倒计时时间
       number: 0, //当前句子在数组中的顺序，0代表第一个句子
       sentences: [], //句子
+      sentence: '', // 标注的句子
       rated: false, //还没打分
       score: 0, //当前句子得分
       Tscore: 0, //总分
+      
+      accuracy_score: 0, //准确度
+      fluency_score: 0, //流畅度
+      standard_score: 0, //标准度
+      integrity_score: 0, //完整度
+
       value: 0, //进度条的进度
       showRecordingDialog: false, // 录音弹框
       player: {
@@ -181,30 +227,36 @@ export default {
           },
           audioSrc,
         } = JSON.parse(data.data); //获取打分api的分数
-        console.log(accuracy_score); // 准确度
-        console.log(fluency_score); // 流畅度
-        console.log(standard_score); // 标准度
-        console.log(integrity_score); // 完整度
-        console.log(total_score); // 总分
+        accuracy_score = Math.ceil(accuracy_score * 20); // 准确度
+        fluency_score = Math.ceil(fluency_score * 20); // 流畅度
+        standard_score = Math.ceil(standard_score * 20); // 标准度
+        integrity_score = Math.ceil(integrity_score * 20); // 完整度
+        total_score = Math.ceil(total_score * 20); // 总分
         let words = word.filter(w => w.total_score);
         console.log(words); // 单词数组
 
-        let sentence = '';
+        this.sentence = '';
         words.forEach((w, index) => {
           if (w.total_score > 4.5) {
-            sentence = `${sentence}<span style="color: #40b883">${content}</span> `;
+            this.sentence = `${this.sentence}<span style="color: #40b883">${w.content}</span> `;
           } else if (w.total_score < 3) {
-            sentence = `${sentence}<span style="color: tomato">${content}</span> `;
+            this.sentence = `${this.sentence}<span style="color: tomato">${w.content}</span> `;
           } else {
-            sentence = `${sentence}${content} `;
+            this.sentence = `${this.sentence}${w.content} `;
           }
           if (index === words.length - 1) {
-            sentence = sentence.trim() + '.';
+            this.sentence = this.sentence.trim() + '.';
+            this.sentence = this.sentence[0].toUpperCase() + this.sentence.slice(1);
           }
         })
 
-        this.score = Math.ceil(score / 5); //转成20分制
-        this.player.scores.push(score);
+        this.score = Math.ceil(total_score / 5); //转成20分制
+        this.accuracy_score = accuracy_score;
+        this.fluency_score = fluency_score;
+        this.standard_score = standard_score;
+        this.integrity_score = integrity_score;
+
+        this.player.scores.push(total_score);
         this.player.recordings.push(audioSrc);
         this.rated = true; //显示打分和句子
         this.Tscore = this.totalScore;
@@ -222,7 +274,7 @@ export default {
             this.noticeText = "Game over";
             this.isEnded = true;
           }
-        }, 3000);
+        }, 5000);
       });
     },
   },
@@ -239,12 +291,12 @@ export default {
   text-align: center;
   background-color: burlywood;
   .round {
-    font-size: xx-large;
-    margin: 5% 0 10% 0;
+    font-size: x-large;
+    margin: 5% 0 5% 0;
   }
   .sentence {
     font-size: x-large;
-    margin: 10% 0;
+    margin: 5% 0;
   }
 }
 

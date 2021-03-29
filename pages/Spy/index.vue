@@ -92,6 +92,7 @@
       >
     </van-dialog>
 
+    <!-- 投票结果 -->
     <van-dialog
       use-slot
       title="Vote result"
@@ -103,6 +104,7 @@
       </div>
     </van-dialog>
 
+    <!-- 游戏结果 -->
     <van-dialog
       use-slot
       title="Game result"
@@ -112,6 +114,75 @@
       <div class="content">
         {{ finishDialogText }}
       </div>
+    </van-dialog>
+
+    <!-- best speaker投票 -->
+    <van-dialog
+      use-slot
+      title="Best speaker"
+      theme="round-button"
+      :show-confirm-button="false"
+      :show="showBestDialog"
+    >
+      <h3 class="voteTime">
+        <van-icon name="../../../static/spy/clock.png"></van-icon>
+        <span class="clock">{{ voteTime }}s</span>
+      </h3>
+      <ul>
+        <li v-for="(p, i) in players" :key="i" style="margin: 10px">
+          <div class="target">
+            <img class="choosePlayers" :src="p.avatarUrl" alt />
+            <img
+              v-if="p.voteStatus === 2"
+              class="voted"
+              src="../../static/spy/tick.png"
+              alt
+            />
+            <img
+              v-if="p.voteStatus === 3"
+              class="abstained"
+              src="../../static/spy/abstained.png"
+              alt
+            />
+            <div
+              class="votedPlayers"
+              v-if="votedPlayers[p._id] && votedPlayers[p._id].length"
+            >
+              <div
+                class="players"
+                v-for="player in votedPlayers[p._id]"
+                :key="player._id"
+              >
+                <img class="player" :src="player.avatarUrl" alt />
+              </div>
+            </div>
+            <p class="name">{{ p.nickName }}</p>
+            <van-button
+              class="vote"
+              type="primary"
+              size="small"
+              color="linear-gradient(to right, #4bb0ff, #6149f6)"
+              :disabled="
+                player.voteStatus === 3 ||
+                (player.voteStatus === 2 &&
+                  player.votes[player.votes.length - 1] === p._id) ||
+                player._id === p._id
+              "
+              @click="onVoteChange(p)"
+            > 
+              Vote
+            </van-button>
+          </div>
+        </li>
+      </ul>
+      <van-button
+        class="abstain"
+        type="danger"
+        size="large"
+        @click="abstain"
+        :disabled="player.voteStatus === 3"
+        >Abstain</van-button
+      >
     </van-dialog>
   </div>
 </template>
@@ -134,7 +205,7 @@ export default {
   data() {
     return {
       timer: null, // 倒计时
-      timerCount: 5, // 倒计时时间
+      timerCount: 15, // 倒计时时间
       audioSrcList: [], // 录音播放列表
       curIndex: 0, // 录音播放位置，对应玩家位置
       round: 0, // 游戏轮数：大于等于1时就每次调换头尾顺序
@@ -148,6 +219,7 @@ export default {
       finishDialogText: "",
       noticeText: "",
       showWord: false,
+      showBestDialog: false, //最佳发言人投票框
     };
   },
   computed: {
@@ -340,7 +412,7 @@ export default {
           // 新一轮开始
           if (!this.round) {
             // 首轮
-            this.onPreparing(3);
+            this.onPreparing(30);
             this.noticeText = "Preparing stage";
           } else {
             // 非首轮，投票结果判断
@@ -388,9 +460,15 @@ export default {
                   this.showFinishDialog = true;
                   this.finishDialogText = `Congratulations!【${winner}】${winners} win！`;
                 }, 3000);
+                //显示best speaker投票
+                setTimeout(() => {
+                  this.showFinishDialog = false;
+                  this.showBestDialog = true;
+                  this.startVoteTimer();
+                }, timeout);
               } else {
                 // 游戏继续
-                this.onPreparing(3);
+                this.onPreparing(15);
               }
             } else if (this.game.voteResult.length > 1) {
               // 多个玩家
@@ -422,7 +500,7 @@ export default {
           }
           break;
         case "recording":
-          this.onRecording(5);
+          this.onRecording(15);
           // console.log(this.gameState);
           this.noticeText = "Recording stage";
           break;
@@ -446,7 +524,7 @@ export default {
   onLoad() {
     this.setCurSpeak("");
     this.showWord = true;
-    this.onPreparing(3);
+    this.onPreparing(30);
     // 录音结束后自动进行上传
     recorderManager.onStop((res) => {
       this.uploadAudio(res.tempFilePath);

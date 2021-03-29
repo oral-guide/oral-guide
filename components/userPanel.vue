@@ -3,6 +3,8 @@
   <div class="user">
     <div class="user_l">
       <img :src="userInfo.avatarUrl||require('../static/home/avatar_default.png')" alt="" />
+      <van-tag type="danger" size="medium">{{userInfo.lv}}</van-tag>
+      {{userInfo.exp}} 
     </div>
     <div class="user_m">
       <p>{{userInfo.nickName||'游客'}}</p>
