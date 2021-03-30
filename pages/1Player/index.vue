@@ -240,6 +240,11 @@ export default {
       });
       // 录音结束后自动进行上传
       recorderManager.onStop(async (res) => {
+        Toast.loading({
+          duration: 0,
+          message: 'uploading...',
+          forbidClick: true,
+        })
         const [err, data] = await this.$util.uploadAudio(
           res.tempFilePath,
           this.sentences[this.number].sentence
@@ -277,6 +282,8 @@ export default {
             sentence = sentence.trim() + ".";
           }
         });
+
+        Toast.clear()
 
         if (!this.isEnded) {
           this.sentence = sentence[0].toUpperCase() + sentence.slice(1);

@@ -27,14 +27,6 @@
       </div>
       <van-divider></van-divider>
       <div class="sentence">
-        <van-circle
-          :value="filteredPlayers[0].scores[index]"
-          color="#40b883"
-          :clockwise="false"
-          :text="filteredPlayers[0].scores[index]"
-          size="30"
-          layer-color="#ccc"
-        />
         <div class="btn">
           <van-button
             size="mini"
@@ -69,10 +61,53 @@
           <van-button size="mini" color="#ff4101" @click="$emit('retry', index)">
             Try Again
           </van-button>
-
-
         </div>
         <div class="content" v-html="sentences[index]"></div>
+        <div class="score">
+          Total score：
+          <van-progress
+            :pivot-text="filteredPlayers[0].scores[index].total_score"
+            color="#40b883"
+            :percentage="filteredPlayers[0].scores[index].total_score"
+            stroke-width="4"
+          />
+        </div>
+        <div class="score">
+          Accuracy score:
+          <van-progress
+            :pivot-text="filteredPlayers[0].scores[index].accuracy_score"
+            color="#40b883"
+            :percentage="filteredPlayers[0].scores[index].accuracy_score"
+            stroke-width="4"
+          />
+        </div>
+        <div class="score">
+          Fluency score:
+          <van-progress
+            :pivot-text="filteredPlayers[0].scores[index].fluency_score"
+            color="#40b883"
+            :percentage="filteredPlayers[0].scores[index].fluency_score"
+            stroke-width="4"
+          />
+        </div>
+        <div class="score">
+          Standard score:
+          <van-progress
+            :pivot-text="filteredPlayers[0].scores[index].standard_score"
+            color="#40b883"
+            :percentage="filteredPlayers[0].scores[index].standard_score"
+            stroke-width="4"
+          />
+        </div>
+        <div class="score">
+          Integrity score:
+          <van-progress
+            :pivot-text="filteredPlayers[0].scores[index].integrity_score"
+            color="#40b883"
+            :percentage="filteredPlayers[0].scores[index].integrity_score"
+            stroke-width="4"
+          />
+        </div>
       </div>
     </van-dialog>
   </div>
@@ -130,7 +165,7 @@ export default {
     },
   },
   methods: {
-    sum: (a, b) => a + b,
+    sum: (a, b) => a + b.total_score,
     cal(arr) {
       return Math.ceil(arr.reduce(this.sum, 0) / 5);
     },
@@ -200,9 +235,12 @@ export default {
 }
 .sentence {
   padding: 20px;
+  .score{
+    margin: 15px 0;
+  }
 }
 .block {
   display: inline-block;
-  width: 10px;
+  width: 5px;
 }
 </style>
