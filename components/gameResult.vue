@@ -7,6 +7,7 @@
       theme="round-button"
       confirmButtonText="Confirm"
       @confirm="$emit('end')"
+      :z-index="80"
     >
       <div class="result_user" v-for="item in filteredPlayers" :key="item._id">
         <van-circle
@@ -68,8 +69,10 @@
           <van-button size="mini" color="#ff4101" @click="$emit('retry', index)">
             Try Again
           </van-button>
+
+
         </div>
-        <div class="content">{{ sentences[index].sentence }}</div>
+        <div class="content" v-html="sentences[index].sentence"></div>
       </div>
     </van-dialog>
   </div>

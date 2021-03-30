@@ -13,9 +13,9 @@
       </div>
       <!-- 用户得分 -->
       <van-progress
-        :pivot-text="Tscore"
+        :pivot-text="totalScore"
         color="#40b883"
-        :percentage="value"
+        :percentage="totalScore"
         stroke-width="4"
       />
     </div>
@@ -29,45 +29,45 @@
         <div class="score">
           Total score：
           <van-progress
-            :pivot-text="player.scores[number]"
+            :pivot-text="player.scores[number].total_score"
             color="#40b883"
-            :percentage="player.scores[number]"
+            :percentage="player.scores[number].total_score"
             stroke-width="4"
           />
         </div>
         <div class="score">
           Accuracy score:
           <van-progress
-            :pivot-text="accuracy_score"
+            :pivot-text="player.scores[number].accuracy_score"
             color="#40b883"
-            :percentage="accuracy_score"
+            :percentage="player.scores[number].accuracy_score"
             stroke-width="4"
           />
         </div>
         <div class="score">
           Fluency score:
           <van-progress
-            :pivot-text="fluency_score"
+            :pivot-text="player.scores[number].fluency_score"
             color="#40b883"
-            :percentage="fluency_score"
+            :percentage="player.scores[number].fluency_score"
             stroke-width="4"
           />
         </div>
         <div class="score">
           Standard score:
           <van-progress
-            :pivot-text="standard_score"
+            :pivot-text="player.scores[number].standard_score"
             color="#40b883"
-            :percentage="standard_score"
+            :percentage="player.scores[number].standard_score"
             stroke-width="4"
           />
         </div>
         <div class="score">
           Integrity score:
           <van-progress
-            :pivot-text="integrity_score"
+            :pivot-text="player.scores[number].integrity_score"
             color="#40b883"
-            :percentage="integrity_score"
+            :percentage="player.scores[number].integrity_score"
             stroke-width="4"
           />
         </div>
@@ -87,6 +87,7 @@
       :show="showRecordingDialog"
       :close-on-click-overlay="false"
       position="bottom"
+      :z-index="120"
     >
       <!-- <div class="recordMsg">录音中。。。还剩{{ timerCount }}s</div> -->
       <van-button color="#ff6600" block @click="stopRecord">
@@ -123,14 +124,9 @@ export default {
       sentence: "", // 标注的句子
       rated: false, //还没打分
       score: 0, //当前句子得分
-      Tscore: 0, //总分
 
-      accuracy_score: 0, //准确度
-      fluency_score: 0, //流畅度
-      standard_score: 0, //标准度
-      integrity_score: 0, //完整度
 
-      value: 0, //进度条的进度
+
       showRecordingDialog: false, // 录音弹框
       player: {
         scores: [],
@@ -154,7 +150,7 @@ export default {
     },
   },
   methods: {
-    sum: (a, b) => a + b,
+    sum: (a, b) => a + b.total_score,
     // 准备
     preparing() {
       this.noticeText = "Preparing stage";
@@ -201,7 +197,7 @@ export default {
       this.number = index;
       console.log(this.number);
       console.log("重新开始录音");
-      this.showResultDialog = false;
+      // this.showResultDialog = false;
       this.showRecordingDialog = true;
       recorderManager.start({
         duration: 10000,
@@ -288,10 +284,6 @@ export default {
         if (!this.isEnded) {
           this.sentence = sentence[0].toUpperCase() + sentence.slice(1);
           this.score = Math.ceil(total_score / 5); //转成20分制
-          this.accuracy_score = accuracy_score;
-          this.fluency_score = fluency_score;
-          this.standard_score = standard_score;
-          this.integrity_score = integrity_score;
 
           // 传给子组件的参
           this.player.scores.push({
@@ -305,8 +297,6 @@ export default {
           this.resultSentences.push(sentence);
 
           this.rated = true; //显示打分和句子
-          this.Tscore = this.totalScore;
-          this.value = this.Tscore;
           this.noticeText = "Rating stage";
           setTimeout(() => {
             if (this.number < 4) {
