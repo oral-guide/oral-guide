@@ -250,8 +250,6 @@ async function addFeedback(content) {
 
 // 改
 async function updateUserInfo(key, subKey, params) {
-    console.log(key);
-    console.log(params);
     let [err, res] = (await uni.request({
         url: "https://humansean.com:8080/weapp/updateUserInfo",
         method: 'POST',

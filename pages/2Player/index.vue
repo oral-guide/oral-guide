@@ -42,9 +42,8 @@
       <!-- 句子和得分条 -->
       <div v-if="rated">
         <p class="sentence" v-html="sentence"></p>
-        <!-- <van-progress :pivot-text="player.scores[number]" color="#40b883" :percentage="player.scores[number]" stroke-width="4" /> -->
         <div class="score">
-          Total score：
+          Total score
           <van-progress
             :pivot-text="player.scores[number].total_score"
             color="#40b883"
@@ -53,7 +52,7 @@
           />
         </div>
         <div class="score">
-          Accuracy score:
+          Accuracy score
           <van-progress
             :pivot-text="player.scores[number].accuracy_score"
             color="#40b883"
@@ -62,7 +61,7 @@
           />
         </div>
         <div class="score">
-          Fluency score:
+          Fluency score
           <van-progress
             :pivot-text="player.scores[number].fluency_score"
             color="#40b883"
@@ -71,7 +70,7 @@
           />
         </div>
         <div class="score">
-          Standard score:
+          Standard score
           <van-progress
             :pivot-text="player.scores[number].standard_score"
             color="#40b883"
@@ -80,7 +79,7 @@
           />
         </div>
         <div class="score">
-          Integrity score:
+          Integrity score
           <van-progress
             :pivot-text="player.scores[number].integrity_score"
             color="#40b883"
@@ -91,8 +90,6 @@
       </div>
     </div>
 
-    <!-- 结果 -->
-    <!-- <gameResult v-if="isEnded" :players="players" :sentences="sentences"></gameResult> -->
 
     <!-- 结果 -->
     <gameResult
@@ -350,7 +347,7 @@ export default {
           audioSrc
         );
         Toast({
-          message: "waiting for the other player",
+          message: "waiting for the other player...",
           duration: 0,
         });
       } else {

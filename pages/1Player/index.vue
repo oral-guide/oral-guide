@@ -242,6 +242,8 @@ export default {
       this.params = {
         scores: this.player.scores.map((s) => s.total_score),
       }
+      console.log(this.params);
+      console.log(this.player.scores);
       this.showEnd = true;
       let target = this.userInfo.history.shadow[
         this.userInfo.history.shadow.length - 1
