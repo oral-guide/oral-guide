@@ -78,7 +78,8 @@
     <gameResult
       v-if="showResultDialog"
       :players="[{ ...player, ...userInfo }]"
-      :sentences="mapResultSentences"
+      :sentences="resultSentences"
+      :urls="urls"
       @retry="retry"
     ></gameResult>
 
@@ -141,13 +142,9 @@ export default {
     totalScore() {
       return Math.ceil(this.player.scores.reduce(this.sum, 0) / 5);
     },
-    mapResultSentences() {
-      // resultSentences再结合audioUrl
-      return this.resultSentences.map((s, i) => ({
-        sentence: s,
-        audioUrl: this.sentences[i].audioUrl,
-      }));
-    },
+    urls() {
+      return this.sentences.map(s => s.audioUrl);
+    }
   },
   methods: {
     sum: (a, b) => a + b.total_score,

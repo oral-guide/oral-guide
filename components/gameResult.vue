@@ -40,7 +40,7 @@
             size="mini"
             icon="volume-o"
             color="#ff4101"
-            @click="play(sentences[index].audioUrl)"
+            @click="play(urls[index])"
           />
           <div class="block"></div>
           <van-button
@@ -72,7 +72,7 @@
 
 
         </div>
-        <div class="content" v-html="sentences[index].sentence"></div>
+        <div class="content" v-html="sentences[index]"></div>
       </div>
     </van-dialog>
   </div>
@@ -87,6 +87,10 @@ export default {
   name: "gameResult",
   props: {
     sentences: {
+      type: Array,
+      default: [],
+    },
+    urls: {
       type: Array,
       default: [],
     },
