@@ -133,6 +133,9 @@ export default {
       type: Array,
       default: [],
     },
+    result: {
+      type: Number
+    }
   },
   data() {
     return {
@@ -145,15 +148,14 @@ export default {
       if (this.players.length === 1) {
         return "Result";
       }
-      let a = Math.ceil(this.player.scores.reduce(this.sum, 0) / 5);
-      let b = Math.ceil(this.opponent.scores.reduce(this.sum, 0) / 5);
-      if (a > b) {
-        return "You win!";
-      } else if (a === b) {
-        return "Draw!";
-      } else {
-        return "You lose!";
-      }
+      switch (this.result) {
+        case 1:          
+          return "You win!";
+        case 0:
+          return "Draw!";
+        case -1:
+          return "You lose!";
+      }      
     },
     filteredPlayers() {
       if (!this.players.length) return [];

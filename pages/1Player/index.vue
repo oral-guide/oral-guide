@@ -145,6 +145,7 @@ export default {
       isEnded: false, //游戏是否结束
       showResultDialog: false, //结果弹框
       showEnd: false, // Analysis弹框
+      params: {},
 
       isImproved: false,
     };
@@ -156,12 +157,7 @@ export default {
     },
     urls() {
       return this.sentences.map((s) => s.audioUrl);
-    },
-    params() {
-      return {
-        scores: this.player.scores.map((s) => s.total_score),
-      };
-    },
+    }
   },
   methods: {
     sum: (a, b) => a + b.total_score,
@@ -243,6 +239,9 @@ export default {
     },
     handleEnd() {
       this.showRecordingDialog = false;
+      this.params = {
+        scores: this.player.scores.map((s) => s.total_score),
+      }
       this.showEnd = true;
       let target = this.userInfo.history.shadow[
         this.userInfo.history.shadow.length - 1

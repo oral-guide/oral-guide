@@ -8,10 +8,14 @@
       <div class="user">
         <img class="player" :src="userInfo.avatarUrl" alt />
         <p class="name">{{ userInfo.nickName }}</p>
-        <div v-if="rated" class="rating">+{{score}}</div>
+        <div v-if="rated" class="rating">+{{ score }}</div>
       </div>
       <!-- 用户总分 -->
-      <van-progress :pivot-text="playerTotalScore" color="#40b883" :percentage="playerTotalScore" />
+      <van-progress
+        :pivot-text="playerTotalScore"
+        color="#40b883"
+        :percentage="playerTotalScore"
+      />
     </div>
 
     <!-- 对手 -->
@@ -20,7 +24,9 @@
       <div class="user">
         <img class="player" :src="opponent.avatarUrl" alt />
         <p class="name">{{ opponent.nickName }}</p>
-        <div v-if="rated" class="rating">+{{Math.ceil(opponent.scores[number]/5)}}</div>
+        <div v-if="rated" class="rating">
+          +{{ Math.ceil(opponent.scores[number] / 5) }}
+        </div>
       </div>
       <!-- 对手得分 -->
       <van-progress
@@ -32,7 +38,7 @@
 
     <!-- 问题 -->
     <div class="question">
-      <h1 class="round">Round {{ number + 1}}</h1>
+      <h1 class="round">Round {{ number + 1 }}</h1>
       <!-- 句子和得分条 -->
       <div v-if="rated">
         <p class="sentence" v-html="sentence"></p>
@@ -94,11 +100,27 @@
       :players="players"
       :sentences="resultSentences"
       :urls="urls"
+      :result="result"
       @retry="retry"
+      @end="handleEnd"
     ></gameResult>
 
-    <van-popup :show="showRecordingDialog" :close-on-click-overlay="false" position="bottom">
-      <van-button color="#ff6600" block @click="stopRecord">Stop recording {{ timerCount }}s</van-button>
+    <gameEnd
+      v-if="showEnd"
+      type="shadow"
+      :num="2"
+      @close="showEnd = false"
+      :params="params"
+    ></gameEnd>
+
+    <van-popup
+      :show="showRecordingDialog"
+      :close-on-click-overlay="false"
+      position="bottom"
+    >
+      <van-button color="#ff6600" block @click="stopRecord"
+        >Stop recording {{ timerCount }}s</van-button
+      >
     </van-popup>
 
     <van-toast id="van-toast" />
@@ -108,6 +130,7 @@
 <script>
 import Toast from "../../wxcomponents/vant/toast/toast";
 import gameResult from "../../components/gameResult.vue";
+import gameEnd from "../../components/gameEnd.vue";
 import { mapState, mapGetters, mapMutations } from "vuex";
 const recorderManager = uni.getRecorderManager();
 const audio = uni.createInnerAudioContext();
@@ -116,7 +139,8 @@ audio.autoplay = true;
 export default {
   name: "Player2",
   components: {
-    gameResult
+    gameResult,
+    gameEnd,
   },
   data() {
     return {
@@ -132,6 +156,10 @@ export default {
       sentence: "", // 标注的句子
       resultSentences: [], // 传给result组件的sentences
       showResultDialog: false, //结果弹框
+      showEnd: false,
+      params: {},
+      result: 0,
+      isImproved: false,
     };
   },
   computed: {
@@ -144,8 +172,8 @@ export default {
       return Math.ceil(this.opponent.scores.reduce(this.sum, 0) / 5);
     },
     urls() {
-      return this.sentences.map(s => s.audioUrl);
-    }
+      return this.sentences.map((s) => s.audioUrl);
+    },
   },
   methods: {
     sum: (a, b) => a + b.total_score,
@@ -158,7 +186,7 @@ export default {
           // 加载页面后首先播放句子录音
           console.log(this.round);
           audio.src = this.sentences[this.round].audioUrl;
-        }
+        },
       });
     },
     startRecord() {
@@ -168,11 +196,11 @@ export default {
         duration: 10000,
         format: "mp3",
         sampleRate: 16000,
-        numberOfChannels: 1
+        numberOfChannels: 1,
       });
       Toast({
         duration: 0,
-        message: "Recording..."
+        message: "Recording...",
       });
       this.timerCount = 10;
       let timer = setInterval(() => {
@@ -216,7 +244,28 @@ export default {
       Toast.clear();
       recorderManager.stop();
       this.showRecordingDialog = false;
-    }
+    },
+    handleEnd() {
+      this.showRecordingDialog = false;
+      this.params = {
+        scores: this.player.scores.map((s) => s.total_score),
+        result: this.result
+      };
+      this.showEnd = true;
+      let target = this.userInfo.history.shadow[
+        this.userInfo.history.shadow.length - 1
+      ];
+      if (this.isImproved) {
+        target.exp = this.player.scores.reduce(this.sum, 0);
+        target.result.push({
+          scores: this.player.scores,
+          sentences: this.resultSentences,
+          urls: this.urls,
+          recordings: this.player.recordings,
+        });
+      }
+      this.$util.updateUserInfo("history", "shadow", target);
+    },
   },
   watch: {
     round(n) {
@@ -228,13 +277,17 @@ export default {
           setTimeout(() => {
             this.rated = false;
             this.preparing();
-            this.number ++;
+            this.number++;
           }, 5000);
         } else {
           this.isEnded = true;
+          let a = Math.ceil(this.player.scores.reduce(this.sum, 0) / 5);
+          let b = Math.ceil(this.opponent.scores.reduce(this.sum, 0) / 5);
+          this.result = a > b ? 1 : a < b ? -1 : 0;
+          this.showResultDialog = true;
         }
       }
-    }
+    },
   },
   async onLoad() {
     this.preparing();
@@ -245,7 +298,7 @@ export default {
       this.startRecord();
     });
 
-    recorderManager.onStop(async res => {
+    recorderManager.onStop(async (res) => {
       const [err, data] = await this.$util.uploadAudio(
         res.tempFilePath,
         this.sentences[this.round].sentence
@@ -283,19 +336,22 @@ export default {
           sentence = sentence.trim() + ".";
         }
       });
-      if (!this.isEnded) {  
+      if (!this.isEnded) {
         this.sentence = sentence[0].toUpperCase() + sentence.slice(1);
         this.score = Math.ceil(total_score / 5); //转成20分制
-        this.$util.updateGamePlayers({
-          accuracy_score,
-          fluency_score,
-          standard_score,
-          integrity_score,
-          total_score,
-        }, audioSrc);
+        this.$util.updateGamePlayers(
+          {
+            accuracy_score,
+            fluency_score,
+            standard_score,
+            integrity_score,
+            total_score,
+          },
+          audioSrc
+        );
         Toast({
           message: "waiting for the other player",
-          duration: 0
+          duration: 0,
         });
       } else {
         this.player.scores[this.number] = {
@@ -309,7 +365,7 @@ export default {
         this.resultSentences[this.number] = sentence;
       }
     });
-  }
+  },
 };
 </script>
 
