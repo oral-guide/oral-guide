@@ -19,15 +19,15 @@ const store = new Vuex.Store({
         ranks: [
             {},
             { exp: 0, title: 'Rookie', color: '#aaa' },
-            { exp: 100, title: 'Freshman', color: '#40b883' },
-            { exp: 500, title: 'Apprentice', color: '#138ddf' },
-            { exp: 1000, title: 'Intern', color: '#7e2fc9' },
-            { exp: 2000, title: 'Master', color: '#ff4101' },
-            { exp: 5000, title: 'Experienced', color: '#aaa' },
-            { exp: 10000, title: 'Adept', color: '#40b883' },
-            { exp: 20000, title: 'Proficient', color: '#138ddf' },
-            { exp: 50000, title: 'Specialist', color: '#7e2fc9' },
-            { exp: 100000, title: 'Legend', color: '#ff4101' }
+            { exp: 1000, title: 'Freshman', color: '#40b883' },
+            { exp: 5000, title: 'Apprentice', color: '#138ddf' },
+            { exp: 10000, title: 'Intern', color: '#7e2fc9' },
+            { exp: 20000, title: 'Master', color: '#ff4101' },
+            { exp: 50000, title: 'Experienced', color: '#aaa' },
+            { exp: 100000, title: 'Adept', color: '#40b883' },
+            { exp: 200000, title: 'Proficient', color: '#138ddf' },
+            { exp: 500000, title: 'Specialist', color: '#7e2fc9' },
+            { exp: 1000000, title: 'Legend', color: '#ff4101' }
         ]
     },
     getters: {

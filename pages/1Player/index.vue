@@ -81,7 +81,18 @@
       :sentences="resultSentences"
       :urls="urls"
       @retry="retry"
+      @end="
+        showEnd = true;
+        showResultDialog = false;
+      "
     ></gameResult>
+
+    <gameEnd
+      v-if="showEnd"
+      type="shadow"
+      :num="1"
+      @close="showEnd = false"
+    ></gameEnd>
 
     <!-- 录音界面 -->
     <van-popup
@@ -104,7 +115,8 @@
 <script>
 import Toast from "../../wxcomponents/vant/toast/toast";
 import { mapState, mapGetters, mapMutations } from "vuex";
-import gameResult from "../../components/gameResult";
+import gameResult from "../../components/gameResult.vue";
+import gameEnd from "../../components/gameEnd.vue";
 const recorderManager = uni.getRecorderManager();
 const audio = uni.createInnerAudioContext();
 audio.autoplay = true;
@@ -113,6 +125,7 @@ export default {
   name: "Player1",
   components: {
     gameResult,
+    gameEnd,
   },
   data() {
     return {
@@ -126,8 +139,6 @@ export default {
       rated: false, //还没打分
       score: 0, //当前句子得分
 
-
-
       showRecordingDialog: false, // 录音弹框
       player: {
         scores: [],
@@ -135,6 +146,7 @@ export default {
       },
       isEnded: false, //游戏是否结束
       showResultDialog: false, //结果弹框
+      showEnd: false, // Analysis弹框
     };
   },
   computed: {
@@ -143,8 +155,8 @@ export default {
       return Math.ceil(this.player.scores.reduce(this.sum, 0) / 5);
     },
     urls() {
-      return this.sentences.map(s => s.audioUrl);
-    }
+      return this.sentences.map((s) => s.audioUrl);
+    },
   },
   methods: {
     sum: (a, b) => a + b.total_score,
@@ -242,9 +254,9 @@ export default {
       recorderManager.onStop(async (res) => {
         Toast.loading({
           duration: 0,
-          message: 'uploading...',
+          message: "uploading...",
           forbidClick: true,
-        })
+        });
         const [err, data] = await this.$util.uploadAudio(
           res.tempFilePath,
           this.sentences[this.number].sentence
@@ -283,7 +295,7 @@ export default {
           }
         });
 
-        Toast.clear()
+        Toast.clear();
 
         if (!this.isEnded) {
           this.sentence = sentence[0].toUpperCase() + sentence.slice(1);
@@ -310,10 +322,11 @@ export default {
               this.rated = false;
               this.preparing();
             } else {
-              //游戏结束
+              // 游戏结束
               this.noticeText = "Game over";
               this.isEnded = true;
               this.showResultDialog = true;
+              // 生成战绩
             }
           }, 5000);
         } else {
