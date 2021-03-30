@@ -234,6 +234,7 @@ async function getSentences() {
     return res.data.data.sentences;
 }
 
+// 增
 async function addFeedback(content) {
     let [err, res] = (await uni.request({
         url: "https://humansean.com:8080/weapp/addFeedback",
@@ -244,6 +245,24 @@ async function addFeedback(content) {
             time: new Date().getTime()
         }
     }));
+    if (err) return err;
+}
+
+// 改
+async function updateUserInfo(key, subKey, params) {
+    console.log(key);
+    console.log(params);
+    let [err, res] = (await uni.request({
+        url: "https://humansean.com:8080/weapp/updateUserInfo",
+        method: 'POST',
+        data: {
+            userId: store.state.userInfo._id,
+            key,
+            subKey,
+            params
+        }
+    }));
+    console.log(111);
     if (err) return err;
 }
 
@@ -270,5 +289,6 @@ export default {
     // shadow
     getSentences,
 
-    addFeedback
+    addFeedback,
+    updateUserInfo
 }

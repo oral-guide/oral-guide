@@ -81,7 +81,16 @@
       :sentences="resultSentences"
       :urls="urls"
       @retry="retry"
+      @end="handleEnd"
     ></gameResult>
+
+    <gameEnd
+      v-if="showEnd"
+      type="shadow"
+      :num="1"
+      @close="showEnd = false"
+      :params="params"
+    ></gameEnd>
 
     <!-- 录音界面 -->
     <van-popup
@@ -104,7 +113,8 @@
 <script>
 import Toast from "../../wxcomponents/vant/toast/toast";
 import { mapState, mapGetters, mapMutations } from "vuex";
-import gameResult from "../../components/gameResult";
+import gameResult from "../../components/gameResult.vue";
+import gameEnd from "../../components/gameEnd.vue";
 const recorderManager = uni.getRecorderManager();
 const audio = uni.createInnerAudioContext();
 audio.autoplay = true;
@@ -113,6 +123,7 @@ export default {
   name: "Player1",
   components: {
     gameResult,
+    gameEnd,
   },
   data() {
     return {
@@ -126,8 +137,6 @@ export default {
       rated: false, //还没打分
       score: 0, //当前句子得分
 
-
-
       showRecordingDialog: false, // 录音弹框
       player: {
         scores: [],
@@ -135,6 +144,9 @@ export default {
       },
       isEnded: false, //游戏是否结束
       showResultDialog: false, //结果弹框
+      showEnd: false, // Analysis弹框
+
+      isImproved: false,
     };
   },
   computed: {
@@ -143,8 +155,13 @@ export default {
       return Math.ceil(this.player.scores.reduce(this.sum, 0) / 5);
     },
     urls() {
-      return this.sentences.map(s => s.audioUrl);
-    }
+      return this.sentences.map((s) => s.audioUrl);
+    },
+    params() {
+      return {
+        scores: this.player.scores.map((s) => s.total_score),
+      };
+    },
   },
   methods: {
     sum: (a, b) => a + b.total_score,
@@ -191,10 +208,10 @@ export default {
     },
     //重新录音
     retry(index) {
+      this.isImproved = true;
       this.number = index;
       console.log(this.number);
       console.log("重新开始录音");
-      // this.showResultDialog = false;
       this.showRecordingDialog = true;
       recorderManager.start({
         duration: 10000,
@@ -223,112 +240,138 @@ export default {
       Toast.clear();
       recorderManager.stop();
       this.showRecordingDialog = false;
-      if (this.isEnded) {
-        this.showResultDialog = true;
-      }
     },
-
-    async onLoad() {
-      this.sentences = await this.$util.getSentences(); // 先获取句子，获取完之后才执行下面的语句
-      this.preparing();
-      audio.onPlay(() => {
-        this.noticeText = "Listening stage";
-      });
-      audio.onEnded(() => {
-        console.log("播放结束");
-        this.startRecord();
-      });
-      // 录音结束后自动进行上传
-      recorderManager.onStop(async (res) => {
-        Toast.loading({
-          duration: 0,
-          message: 'uploading...',
-          forbidClick: true,
-        })
-        const [err, data] = await this.$util.uploadAudio(
-          res.tempFilePath,
-          this.sentences[this.number].sentence
-        );
-        let {
-          result: {
-            integrity_score,
-            sentence: {
-              accuracy_score,
-              fluency_score,
-              standard_score,
-              total_score,
-              word,
-            },
-          },
-          audioSrc,
-        } = JSON.parse(data.data); //获取打分api的分数
-        accuracy_score = Math.ceil(accuracy_score * 20); // 准确度
-        fluency_score = Math.ceil(fluency_score * 20); // 流畅度
-        standard_score = Math.ceil(standard_score * 20); // 标准度
-        integrity_score = Math.ceil(integrity_score * 20); // 完整度
-        total_score = Math.ceil(total_score * 20); // 总分
-        let words = word.filter((w) => w.total_score); // 单词数组
-
-        let sentence = "";
-        words.forEach((w, index) => {
-          if (w.total_score > 4.5) {
-            sentence = `${sentence}<span style="color: #40b883">${w.content}</span> `;
-          } else if (w.total_score < 3) {
-            sentence = `${sentence}<span style="color: tomato">${w.content}</span> `;
-          } else {
-            sentence = `${sentence}${w.content} `;
-          }
-          if (index === words.length - 1) {
-            sentence = sentence.trim() + ".";
-          }
+    handleEnd() {
+      this.showRecordingDialog = false;
+      this.showEnd = true;
+      let target = this.userInfo.history.shadow[
+        this.userInfo.history.shadow.length - 1
+      ];
+      if (this.isImproved) {
+        target.exp = this.player.scores.reduce(this.sum, 0);
+        target.result.push({
+          scores: this.player.scores,
+          sentences: this.resultSentences,
+          urls: this.urls,
+          recordings: this.player.recordings,
         });
-
-        Toast.clear()
-
-        if (!this.isEnded) {
-          this.sentence = sentence[0].toUpperCase() + sentence.slice(1);
-          this.score = Math.ceil(total_score / 5); //转成20分制
-
-          // 传给子组件的参
-          this.player.scores.push({
+      }
+      this.$util.updateUserInfo("history", "shadow", target);
+    },
+  },
+  async onLoad() {
+    this.sentences = await this.$util.getSentences(); // 先获取句子，获取完之后才执行下面的语句
+    this.preparing();
+    audio.onPlay(() => {
+      this.noticeText = "Listening stage";
+    });
+    audio.onEnded(() => {
+      console.log("播放结束");
+      this.startRecord();
+    });
+    // 录音结束后自动进行上传
+    recorderManager.onStop(async (res) => {
+      Toast.loading({
+        duration: 0,
+        message: "uploading...",
+        forbidClick: true,
+      });
+      const [err, data] = await this.$util.uploadAudio(
+        res.tempFilePath,
+        this.sentences[this.number].sentence
+      );
+      let {
+        result: {
+          integrity_score,
+          sentence: {
             accuracy_score,
             fluency_score,
             standard_score,
-            integrity_score,
             total_score,
-          });
-          this.player.recordings.push(audioSrc);
-          this.resultSentences.push(sentence);
+            word,
+          },
+        },
+        audioSrc,
+      } = JSON.parse(data.data); //获取打分api的分数
+      accuracy_score = Math.ceil(accuracy_score * 20); // 准确度
+      fluency_score = Math.ceil(fluency_score * 20); // 流畅度
+      standard_score = Math.ceil(standard_score * 20); // 标准度
+      integrity_score = Math.ceil(integrity_score * 20); // 完整度
+      total_score = Math.ceil(total_score * 20); // 总分
+      let words = word.filter((w) => w.total_score); // 单词数组
 
-          this.rated = true; //显示打分和句子
-          this.noticeText = "Rating stage";
-          setTimeout(() => {
-            if (this.number < 4) {
-              //开始下一轮
-              this.number++;
-              this.score = 0;
-              this.rated = false;
-              this.preparing();
-            } else {
-              //游戏结束
-              this.noticeText = "Game over";
-              this.isEnded = true;
-              this.showResultDialog = true;
-            }
-          }, 5000);
+      let sentence = "";
+      words.forEach((w, index) => {
+        if (w.total_score > 4.5) {
+          sentence = `${sentence}<span style="color: #40b883">${w.content}</span> `;
+        } else if (w.total_score < 3) {
+          sentence = `${sentence}<span style="color: tomato">${w.content}</span> `;
         } else {
-          this.player.scores[this.number] = {
-            accuracy_score,
-            fluency_score,
-            standard_score,
-            integrity_score,
-            total_score,
-          };
-          this.player.recordings[this.number] = audioSrc;
-          this.resultSentences[this.number] = sentence;
+          sentence = `${sentence}${w.content} `;
+        }
+        if (index === words.length - 1) {
+          sentence = sentence.trim() + ".";
         }
       });
-    },
+
+      Toast.clear();
+
+      if (!this.isEnded) {
+        this.sentence = sentence[0].toUpperCase() + sentence.slice(1);
+        this.score = Math.ceil(total_score / 5); //转成20分制
+
+        // 传给子组件的参
+        this.player.scores.push({
+          accuracy_score,
+          fluency_score,
+          standard_score,
+          integrity_score,
+          total_score,
+        });
+        this.player.recordings.push(audioSrc);
+        this.resultSentences.push(sentence);
+
+        this.rated = true; //显示打分和句子
+        this.noticeText = "Rating stage";
+        setTimeout(() => {
+          if (this.number < 4) {
+            //开始下一轮
+            this.number++;
+            this.score = 0;
+            this.rated = false;
+            this.preparing();
+          } else {
+            // 游戏结束
+            this.noticeText = "Game over";
+            this.isEnded = true;
+            this.showResultDialog = true;
+            // 生成战绩
+            this.userInfo.history.shadow.push({
+              time: new Date().getTime(),
+              exp: this.player.scores.reduce(this.sum, 0),
+              result: [
+                {
+                  scores: this.player.scores,
+                  sentences: this.resultSentences,
+                  urls: this.urls,
+                  recordings: this.player.recordings,
+                },
+              ],
+            });
+          }
+        }, 5000);
+      } else {
+        this.player.scores[this.number] = {
+          accuracy_score,
+          fluency_score,
+          standard_score,
+          integrity_score,
+          total_score,
+        };
+        this.player.recordings[this.number] = audioSrc;
+        this.resultSentences[this.number] = sentence;
+      }
+    });
   },
 };
 </script>
@@ -340,7 +383,6 @@ export default {
   padding: 5% 10%;
   border: 1px solid;
   height: 50vh;
-  // text-align: center;
   background-color: burlywood;
   .round {
     text-align: center;
@@ -349,7 +391,6 @@ export default {
   }
   .sentence {
     text-align: center;
-    // font-size: x-large;
     margin: 5% 0;
   }
   .score {

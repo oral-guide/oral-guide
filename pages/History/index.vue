@@ -2,7 +2,6 @@
   <div class="history">
     <van-tabs
       active="shadow"
-      @change="onChange"
       sticky
       animated
       swipeable
@@ -13,17 +12,38 @@
       title-active-color="#ff4101"
     >
       <van-tab title="Shadow Exercise" name="shadow">
-        <div class="main">shadow game</div>
+        <div class="main">
+          <!-- shadow game的战绩 -->
+          <div v-for="(s, index) in userInfo.history.shadow" :key="index">
+            {{ $util.formatTime(s.time) }}
+            获得了{{ s.exp }}
+            {{ s.result }}
+            <!-- 弄个组件 shadowResult.vue -->
+            <shadowResult :params="s.result[state]"></shadowResult>
+          </div>
+        </div>
       </van-tab>
       <van-tab title="Who is the spy" name="spy">
-        <div class="main">spy game</div>
+        <div class="main">
+          <!-- spy game的战绩 -->
+          
+        </div>
       </van-tab>
     </van-tabs>
   </div>
 </template>
 
 <script>
-export default {};
+import { mapState } from 'vuex';
+export default {
+  data() {
+    return {
+    }
+  },
+  computed: {
+    ...mapState(['userInfo'])
+  },
+};
 </script>
 
 <style lang="scss" scoped>

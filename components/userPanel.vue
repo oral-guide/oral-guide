@@ -21,36 +21,25 @@
           Lv {{ userInfo.lv }} | {{ ranks[userInfo.lv].title }}
         </van-tag>
       </p>
-      <expProgress
-        v-if="userInfo"
-        :total="ranks[userInfo.lv + 1].exp || 100000"
-        :current="userInfo.exp"
-      ></expProgress>
+      <expProgress v-if="userInfo"></expProgress>
       <span v-if="!userInfo">点击登陆/注册</span>
     </div>
     <div class="user_r" v-if="!userInfo">
       <van-icon name="arrow" color="#969799" />
     </div>
-    <van-button @click="show = true">Test</van-button>
-
-    <gameEnd v-if="show" type="shadow" :num="2" @close="show = false"></gameEnd>
   </div>
 </template>
 
 <script>
 import { mapState } from "vuex";
 import expProgress from "./expProgress.vue";
-import gameEnd from "./gameEnd.vue";
 export default {
   name: "userPanel",
   components: {
     expProgress,
-    gameEnd
   },
   data() {
-    return {
-      show: false
-    }
+    return {};
   },
   computed: {
     ...mapState(["userInfo", "ranks"]),
@@ -103,5 +92,4 @@ export default {
     width: 10vw;
   }
 }
-
 </style>
