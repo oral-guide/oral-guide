@@ -8,18 +8,16 @@
 </template>
 
 <script>
+import { mapState } from 'vuex';
 export default {
-  props: {
-    total: {
-      type: Number,
+  computed: {
+    ...mapState(['userInfo', 'ranks']),
+    total() {
+      return this.ranks[this.userInfo.lv + 1].exp || 1000000;
     },
-    current: {
-      type: Number,
-    },
-  },
-  mounted() {
-    console.log(this.total);
-    console.log(this.current);
+    current() {
+      return this.userInfo.exp;
+    }
   },
 };
 </script>
@@ -41,6 +39,7 @@ export default {
     .bar {
       height: 10px;
       background: #ff4101;
+      transition: 1s;
     }
   }
   .detail {

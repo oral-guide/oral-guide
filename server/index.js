@@ -256,8 +256,35 @@ app.get('/weapp/getSentences', async (req, res) => {
     let sentences = allSentences[Math.floor(allSentences.length * Math.random())].sentences;
     res.json({ status: 200, data: { sentences } });
 })
+
+// 增
 app.post('/weapp/addFeedback', async (req, res) => {
     await mongodb.col('feedback').insertOne(req.body)
+    res.json({ status: 200, msg: 'success' });
+})
+
+// 改
+app.post('/weapp/updateUserInfo', async (req, res) => {
+    const { userId, key, subKey, params } = req.body;
+    const _id = ObjectId(userId);
+    switch (key) {
+        case 'lv':
+            await mongodb.col('users').updateOne({ _id }, {
+                $inc: { lv: 1 }
+            })
+            break;
+        case 'exp':
+            await mongodb.col('users').updateOne({ _id }, {
+                $inc: { exp: params.exp }
+            })
+            break;
+        case 'history':
+            console.log(params);
+            await mongodb.col('users').updateOne({ _id }, {
+                $push: { [`history.${subKey}`]: params } 
+            })
+            break;
+    }
     res.json({ status: 200, msg: 'success' });
 })
 

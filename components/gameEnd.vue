@@ -11,12 +11,33 @@
       @cancel="back"
       @confirm="playAgain"
     >
+      <div class="row" v-for="(s, index) in params.scores" :key="index">
+        <span class="label">Round {{ index + 1 }}</span>
+        <span class="value">{{ s }}</span>
+      </div>
+      <div class="row" v-for="(val, key) in bonus" :key="key">
+        <span class="label">{{ key }}</span>
+        <span class="value">{{ val }}</span>
+      </div>
+      <div class="row">
+        <span class="label">Total</span>
+        <span class="value">{{ total }}</span>
+      </div>
+      <div class="row">
+        <expProgress></expProgress>
+      </div>
     </van-dialog>
   </div>
 </template>
 
 <script>
+import { mapState } from "vuex";
+import Toast from "../wxcomponents/vant/toast/toast";
+import expProgress from "../components/expProgress.vue";
 export default {
+  components: {
+    expProgress,
+  },
   props: {
     type: {
       type: String,
@@ -28,7 +49,32 @@ export default {
       type: Number,
     },
   },
+  computed: {
+    ...mapState(["userInfo", "ranks"]),
+    bonus() {
+      let result = {};
+      if (this.params.result) {
+        switch (this.params.result) {
+          case 1:
+            result["Victory"] = 300;
+            break;
+          case 0:
+            result["Draw"] = 200;
+            break;
+          case -1:
+            result["Draw"] = 100;
+            break;
+        }
+      }
+      return result;
+    },
+    total() {
+      let arr = this.type === "shadow" ? this.params.scores : [];
+      return [...arr, ...Object.values(this.bonus)].reduce(this.sum, 0);
+    },
+  },
   methods: {
+    sum: (a, b) => a + b,
     back() {
       this.$emit("close");
       uni.switchTab({
@@ -52,8 +98,30 @@ export default {
       }
     },
   },
+  mounted() {
+    setTimeout(() => {
+      this.userInfo.exp += this.total;
+      if (this.userInfo.exp >= this.ranks[this.userInfo.lv + 1].exp) {
+        Toast('Level Up!!');
+        this.userInfo.lv += 1;
+        this.$util.updateUserInfo("lv");
+      }
+    }, 1000);
+    this.$util.updateUserInfo("exp", "", { exp: this.total });
+  },
 };
 </script>
 
 <style lang="scss" scoped>
+.row {
+  & {
+    padding: 7px 30px;
+  }
+  span {
+    display: inline-block;
+  }
+  .value {
+    float: right;
+  }
+}
 </style>
