@@ -11,7 +11,7 @@
     </div>
     <div class="user_m">
       <p>
-        {{ userInfo.nickName || "游客" }}
+        {{ userInfo.nickName || "Visitor" }}
         <van-tag
           v-if="userInfo"
           :color="ranks[userInfo.lv].color"
@@ -22,7 +22,7 @@
         </van-tag>
       </p>
       <expProgress v-if="userInfo"></expProgress>
-      <span v-if="!userInfo">点击登陆/注册</span>
+      <span v-if="!userInfo">sign in/register</span>
     </div>
     <div class="user_r" v-if="!userInfo">
       <van-icon name="arrow" color="#969799" />
