@@ -14,11 +14,11 @@
       <van-tab title="Shadow Exercise" name="shadow">
         <div class="main">
           <!-- shadow game的战绩 -->
-          <div v-for="(s, index) in shadowHistory" :key="index">
-            <div class="time"><span>Time:</span> {{ $util.formatTime(s.time) }}</div>
-            <div class="exp"><span>Exp:</span> {{ s.exp }}</div>
+          <div class="history" v-for="(s, index) in shadowHistory" :key="index">
+            <div class="time">Time: {{ $util.formatTime(s.time) }}</div>
+            <div class="exp">Exp: {{ s.exp }}</div>
             <!-- 弄个组件 shadowResult.vue -->
-            <shadowResult :result="s.result[state]" :state="state" @exchange="exchange"></shadowResult>
+            <shadowResult :result="s.result" :state="state"></shadowResult>
           </div>
         </div>
       </van-tab>
@@ -51,15 +51,14 @@ export default {
     }
   },
   methods: {
-    exchange() {
-      if(this.state == 0){
-        this.state = 1
-      } else {
-        this.state = 0
-      }
-      console.log(this.state);
-      
-    }
+    // exchange() {
+    //   if(this.state == 0){
+    //     this.state = 1
+    //   } else {
+    //     this.state = 0
+    //   }
+    //   console.log(this.state);
+    // }
   },
   mounted () {
     console.log(this.shadowHistory);
@@ -72,14 +71,12 @@ export default {
   position: relative;
   margin:10px;
   padding: 10px;
-  border: 1px solid;
-  span{
-    font-weight: bold;
+  .history {
+    border: 1px solid;
+    margin-bottom:10px;
+    padding: 10px;
   }
-  .exp {
-    position: absolute;
-    // right: 5px;
-  }
+
 }
 
 

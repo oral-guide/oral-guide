@@ -6,14 +6,14 @@
             size="mini"
             icon="volume-o"
             color="#ff4101"
-            @click="play(result.urls[index])"
+            @click="play(result[state].urls[index])"
           />
           <div class="block"></div>
           <van-button
             size="mini"
             icon="play-circle-o"
             color="#ff4101"
-            @click="play(result.recordings[index])"
+            @click="play(result[state].recordings[index])"
           />
           <div class="block" v-if="index !== 0"></div>
           <van-button
@@ -36,56 +36,56 @@
           <van-button
             size="mini"
             color="#ff4101"
-            @click="$emit('exchange')"
+            @click="exchange"
           >
             <template v-if="state === 0">Before</template>
             <template v-else>After</template>
           </van-button>
           <div class="block"></div>
         </div>
-        <div class="content" v-html="result.sentences[index]"></div>
+        <div class="content" v-html="result[state].sentences[index]"></div>
         <div class="score">
           Total score：
           <van-progress
-            :pivot-text="result.scores[index].total_score"
+            :pivot-text="result[state].scores[index].total_score"
             color="#40b883"
-            :percentage="result.scores[index].total_score"
+            :percentage="result[state].scores[index].total_score"
             stroke-width="4"
           />
         </div>
         <div class="score">
           Accuracy score:
           <van-progress
-            :pivot-text="result.scores[index].accuracy_score"
+            :pivot-text="result[state].scores[index].accuracy_score"
             color="#40b883"
-            :percentage="result.scores[index].accuracy_score"
+            :percentage="result[state].scores[index].accuracy_score"
             stroke-width="4"
           />
         </div>
         <div class="score">
           Fluency score:
           <van-progress
-            :pivot-text="result.scores[index].fluency_score"
+            :pivot-text="result[state].scores[index].fluency_score"
             color="#40b883"
-            :percentage="result.scores[index].fluency_score"
+            :percentage="result[state].scores[index].fluency_score"
             stroke-width="4"
           />
         </div>
         <div class="score">
           Standard score:
           <van-progress
-            :pivot-text="result.scores[index].standard_score"
+            :pivot-text="result[state].scores[index].standard_score"
             color="#40b883"
-            :percentage="result.scores[index].standard_score"
+            :percentage="result[state].scores[index].standard_score"
             stroke-width="4"
           />
         </div>
         <div class="score">
           Integrity score:
           <van-progress
-            :pivot-text="result.scores[index].integrity_score"
+            :pivot-text="result[state].scores[index].integrity_score"
             color="#40b883"
-            :percentage="result.scores[index].integrity_score"
+            :percentage="result[state].scores[index].integrity_score"
             stroke-width="4"
           />
         </div>
@@ -102,8 +102,8 @@ export default {
   name: "shadowResult",
   props: {
     result: {
-      type: Object,
-      default: {},
+      type: Array,
+      default: []
     },
     state: {
       type: Number,
@@ -112,6 +112,7 @@ export default {
   data() {
     return {
         index: 0,
+        state: 0, //0代表重录前，1是重录后
     };
   },
   methods: {
@@ -119,6 +120,14 @@ export default {
       audio.src = src;
       audio.play();
     },
+    exchange() {
+      if(this.state == 0){
+        this.state = 1
+      } else {
+        this.state = 0
+      }
+      console.log(this.state);
+    }
   },
 
 }
