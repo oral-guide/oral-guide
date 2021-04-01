@@ -51,7 +51,7 @@ export default {
     },
     enterGame () {
       uni.navigateTo({
-        url: '/pages/2Player/index'
+        url: '/pages/Shadow/index?num=2'
       })
     },
     // 开始匹配

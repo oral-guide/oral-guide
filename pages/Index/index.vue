@@ -91,7 +91,7 @@ export default {
       if (name === "Shadowing exercise") {
         if (this.state === 1) {
           uni.navigateTo({
-            url: "/pages/1Player/index",
+            url: "/pages/Shadow/index?num=1",
           });
         } else {
           uni.navigateTo({

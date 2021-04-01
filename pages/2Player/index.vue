@@ -141,17 +141,17 @@ export default {
   },
   data() {
     return {
-      number: 0,
-      score: 0, //当前句子得分
-      percentage: 0, //进度条的进度
-      showRecordingDialog: false,
-      timerCount: 10,
-      timer: null,
-      isEnded: false,
       noticeText: "",
-      rated: false,
+      timer: null,
+      timerCount: 10,
+      number: 0,
       sentence: "", // 标注的句子
       resultSentences: [], // 传给result组件的sentences
+      rated: false,
+      score: 0, //当前句子得分
+
+      showRecordingDialog: false,
+      isEnded: false,
       showResultDialog: false, //结果弹框
       showEnd: false,
       params: {},
@@ -211,9 +211,6 @@ export default {
     //重新录音
     retry(index) {
       this.number = index;
-      console.log(this.number);
-      console.log("重新开始录音");
-      // this.showResultDialog = false;
       this.showRecordingDialog = true;
       recorderManager.start({
         duration: 10000,
