@@ -7,6 +7,46 @@
     <div class="spy_seat">
       <seat :seatInfo="players[i]" v-for="i in 8" :key="i">{{ i + 1 }}</seat>
     </div>
+    <!-- 录音得分情况 -->
+    <div class="scores" v-if="rated">
+      <div class="score">
+        Total score:
+        <van-progress
+          :pivot-text="total_score"
+          color="#40b883"
+          :percentage="total_score"
+          stroke-width="4"
+        />
+      </div>
+      <div class="score">
+        Accuracy score:
+        <van-progress
+          :pivot-text="accuracy_score"
+          color="#40b883"
+          :percentage="accuracy_score"
+          stroke-width="4"
+        />
+      </div>
+      <div class="score">
+        Fluency score:
+        <van-progress
+          :pivot-text="fluency_score"
+          color="#40b883"
+          :percentage="fluency_score"
+          stroke-width="4"
+        />
+      </div>
+      <div class="score">
+        Standard score:
+        <van-progress
+          :pivot-text="standard_score"
+          color="#40b883"
+          :percentage="standard_score"
+          stroke-width="4"
+        />
+      </div>
+    </div>
+
     <!-- 30s 倒计时 -->
     <van-toast id="van-toast" />
     <!-- 录音倒计时 -->
@@ -235,6 +275,11 @@ export default {
       showWord: false,
       showDeadDialog: false,
       showBestDialog: false, //最佳发言人投票框
+      rated:false, //打分与否
+      accuracy_score: 0,
+      fluency_score: 0,
+      standard_score: 0,
+      total_score: 0,
     };
   },
   computed: {
@@ -332,6 +377,10 @@ export default {
       fluency_score = Math.ceil(fluency_score * 20); // 流畅度
       standard_score = Math.ceil(standard_score * 20); // 标准度
       total_score = Math.ceil(total_score * 20); // 总分
+      this.accuracy_score = accuracy_score,
+      this.fluency_score = fluency_score,
+      this.standard_score = standard_score,
+      this.total_score = total_score,
       // 将玩家录音的url推进records数组
       this.player.records.push(audioSrc);
       // 通过websocket同步自己的录音
@@ -511,11 +560,13 @@ export default {
           // 全体录音结束
           this.showWord = false;
           Toast.clear();
+          this.rated = true;
           this.onPlaying();
           break;
         case "voting":
           this.showWord = false;
           Toast.clear();
+          this.rated = false;    
           this.onVoting();
           this.noticeText = "Voting stage";
           break;
