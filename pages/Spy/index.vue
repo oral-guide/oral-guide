@@ -64,7 +64,7 @@
     <!-- 投票 -->
     <van-dialog
       use-slot
-      title="Please vote"
+      :title="isEnded ? 'Best Speaker' : 'Please vote'"
       theme="round-button"
       :show-confirm-button="false"
       :show="showVoteDialog"
@@ -112,7 +112,7 @@
                 (player.voteStatus === 2 &&
                   player.votes[player.votes.length - 1] === p._id) ||
                 player._id === p._id ||
-                !player.isAlive
+                (!player.isAlive && !isEnded)
               "
               @click="onVoteChange(p)"
             >
@@ -126,9 +126,10 @@
         type="danger"
         size="large"
         @click="abstain"
-        :disabled="player.voteStatus === 3 || !player.isAlive"
-        >Abstain</van-button
+        :disabled="player.voteStatus === 3 || (!player.isAlive && !isEnded)"
       >
+        Abstain
+      </van-button>
     </van-dialog>
 
     <!-- 投票结果 -->
@@ -148,7 +149,7 @@
       use-slot
       title="Game result"
       :show="showFinishDialog"
-      @confirm="handleEnd"
+      :show-confirm-button="false"
     >
       <div class="content">
         {{ finishDialogText }}
@@ -171,75 +172,6 @@
           player.isSpy ? "Spy" : "Civilian"
         }}】. You can quit the game now or continue to spectate.
       </div>
-    </van-dialog>
-
-    <!-- best speaker投票 -->
-    <van-dialog
-      use-slot
-      title="Best speaker"
-      theme="round-button"
-      :show-confirm-button="false"
-      :show="showBestDialog"
-    >
-      <h3 class="voteTime">
-        <van-icon name="../../../static/spy/clock.png"></van-icon>
-        <span class="clock">{{ voteTime }}s</span>
-      </h3>
-      <ul>
-        <li v-for="(p, i) in players" :key="i" style="margin: 10px">
-          <div class="target">
-            <img class="choosePlayers" :src="p.avatarUrl" alt />
-            <img
-              v-if="p.voteStatus === 2"
-              class="voted"
-              src="../../static/spy/tick.png"
-              alt
-            />
-            <img
-              v-if="p.voteStatus === 3"
-              class="abstained"
-              src="../../static/spy/abstained.png"
-              alt
-            />
-            <div
-              class="votedPlayers"
-              v-if="votedPlayers[p._id] && votedPlayers[p._id].length"
-            >
-              <div
-                class="players"
-                v-for="player in votedPlayers[p._id]"
-                :key="player._id"
-              >
-                <img class="player" :src="player.avatarUrl" alt />
-              </div>
-            </div>
-            <p class="name">{{ p.nickName }}</p>
-            <van-button
-              class="vote"
-              type="primary"
-              size="small"
-              color="linear-gradient(to right, #4bb0ff, #6149f6)"
-              :disabled="
-                player.voteStatus === 3 ||
-                (player.voteStatus === 2 &&
-                  player.votes[player.votes.length - 1] === p._id) ||
-                player._id === p._id
-              "
-              @click="onVoteChange(p)"
-            >
-              Vote
-            </van-button>
-          </div>
-        </li>
-      </ul>
-      <van-button
-        class="abstain"
-        type="danger"
-        size="large"
-        @click="abstain"
-        :disabled="player.voteStatus === 3"
-        >Abstain</van-button
-      >
     </van-dialog>
 
     <gameEnd
@@ -266,7 +198,7 @@ export default {
   components: {
     Seat,
     word,
-    gameEnd
+    gameEnd,
   },
   data() {
     return {
@@ -287,7 +219,6 @@ export default {
       noticeText: "",
       showWord: false,
       showDeadDialog: false,
-      showBestDialog: false, //最佳发言人投票框
       showEnd: false,
       params: {},
       rated:false, //打分与否
@@ -295,13 +226,21 @@ export default {
       // fluency_score: 0,
       // standard_score: 0,
       // total_score: 0,
+      isEnded: false,
+      rated: false, //打分与否
+      accuracy_score: 0,
+      fluency_score: 0,
+      standard_score: 0,
+      total_score: 0,
     };
   },
   computed: {
     ...mapState(["game", "room", "isOwner", "userInfo", "curSpeak"]),
     ...mapGetters(["players", "player", "gameState", "word", "votedPlayers"]),
     validPlayers() {
-      return this.players.filter((p) => p.isAlive);
+      return this.isEnded
+        ? this.players
+        : this.players.filter((p) => p.isAlive);
     },
   },
   methods: {
@@ -336,6 +275,7 @@ export default {
         this.startRecord();
         this.startRecordTimer(time);
       } else {
+        console.log("???");
         Toast({
           message: "Waiting for the other players...",
           duration: 0,
@@ -411,6 +351,14 @@ export default {
       // this.total_score = total_score,
       // 将玩家录音的url推进records数组
       // this.player.recordings.push(audioSrc);
+      this.$util.updatePlayerInfo("scores", this.player.scores);
+      console.log(this.player.scores);
+      (this.accuracy_score = accuracy_score),
+        (this.fluency_score = fluency_score),
+        (this.standard_score = standard_score),
+        (this.total_score = total_score),
+        // 将玩家录音的url推进records数组
+        this.player.recordings.push(audioSrc);
       // 通过websocket同步自己的录音
       this.$util.updatePlayerRecords(this.userInfo._id, audioSrc);
     },
@@ -470,15 +418,18 @@ export default {
       let timer = setInterval(() => {
         this.voteTime--;
         if (this.voteTime == 0) {
+          clearInterval(timer);
+          this.voteTime = 10;
           if (this.player.voteStatus == 1) {
             // 若倒计时结束玩家仍未选择投票，则默认该玩家弃票
             this.$util.vote(null);
           }
           this.showVoteDialog = false;
-          clearInterval(timer);
-          this.voteTime = 10;
-          if (this.player.isAlive) {
+          if (this.player.isAlive && !this.isEnded) {
             this.$util.updateGameState("preparing");
+          }
+          if (this.isEnded) {
+            this.$util.updateBestSpeaker();
           }
         }
       }, 1000);
@@ -489,10 +440,17 @@ export default {
     abstain() {
       this.$util.vote(null);
     },
-    handleEnd() {
+    handleFinish() {
       this.showFinishDialog = false;
+      this.showVoteDialog = true;
+      this.startVoteTimer();
+    },
+    handleEnd() {
       this.params.scores = this.player.scores.map((s) => s.total_score);
       this.params.result = this.result;
+      if (this.game.voteResult.includes(this.player._id)) {
+        this.params.bestSpeaker = true;
+      }
       this.showEnd = true;
     },
   },
@@ -532,8 +490,13 @@ export default {
               let isEnded = !activeSpies || activeSpies * 2 === activePlayers;
 
               if (isEnded) {
-                console.log("结束！");
+                this.isEnded = true;
                 let winner = player.isSpy ? "Civilian" : "Spy";
+                this.result =
+                  (!this.player.isSpy && player.isSpy) ||
+                  (this.player.isSpy && !player.isSpy)
+                    ? 1
+                    : -1;
                 let winners = this.players
                   .filter((p) => (player.isSpy ? !p.isSpy : p.isSpy))
                   .reduce((acc, cur) => `${acc}【${cur.nickName}】`, "");
@@ -541,16 +504,14 @@ export default {
                 setTimeout(() => {
                   this.showFinishDialog = true;
                   this.finishDialogText = `Congratulations!【${winner}】${winners} win！`;
+                  setTimeout(() => {
+                    this.handleFinish();
+                  }, 3000);
                 }, 3000);
-                //显示best speaker投票
-                setTimeout(() => {
-                  this.showFinishDialog = false;
-                  this.showBestDialog = true;
-                  this.startVoteTimer();
-                }, timeout);
               } else {
                 // 游戏继续
-                if (player._id === this.userInfo._id) { // 被淘汰玩家显示是否观战
+                if (player._id === this.userInfo._id) {
+                  // 被淘汰玩家显示是否观战
                   this.$util.updatePlayerInfo("isAlive", false);
                   // @TODO 死掉玩家显示dialog，选择退出房间或继续观战
                   setTimeout(() => {
@@ -558,7 +519,9 @@ export default {
                   }, 3000);
                   return;
                 }
-                this.onPreparing(3);
+                setTimeout(() => {
+                  this.onPreparing(3);
+                }, 3000);
               }
             } else if (this.game.voteResult.length > 1) {
               // 多个玩家
@@ -590,7 +553,6 @@ export default {
           }
           break;
         case "recording":
-          console.log(111);
           this.onRecording(15);
           this.noticeText = "Recording stage";
           break;
@@ -604,10 +566,12 @@ export default {
         case "voting":
           this.showWord = false;
           Toast.clear();
-          this.rated = false;    
+          this.rated = false;
           this.onVoting();
           this.noticeText = "Voting stage";
           break;
+        case "ending":
+          this.handleEnd();
       }
     },
   },
