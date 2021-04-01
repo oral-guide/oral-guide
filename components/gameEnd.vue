@@ -62,7 +62,7 @@ export default {
             result["Draw"] = 200;
             break;
           case -1:
-            result["Draw"] = 100;
+            result["Defeat"] = 100;
             break;
         }
       }
@@ -89,7 +89,7 @@ export default {
       this.$emit("close");
       if (this.num === 1) {
         uni.redirectTo({
-          url: `/pages/1Player/index`,
+          url: `/pages/Shadow/index?num=1`,
         });
       } else {
         uni.redirectTo({

@@ -31,13 +31,7 @@
 			}
 		},
 		{
-			"path": "pages/1Player/index",
-			"style": {
-				"navigationBarTitleText": "Shadowing exercise"
-			}
-		},
-		{
-			"path": "pages/2Player/index",
+			"path": "pages/Shadow/index",
 			"style": {
 				"navigationBarTitleText": "Shadowing exercise"
 			}

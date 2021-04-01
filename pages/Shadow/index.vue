@@ -3,71 +3,134 @@
     <!-- 通知栏 -->
     <van-notice-bar color="#ff4101" left-icon="volume-o" :text="noticeText" />
 
-    <!-- 用户信息 -->
+    <!-- 玩家 -->
     <div class="player">
-      <div class="userinfo">
+      <!-- 玩家信息 -->
+      <div class="user">
         <img :src="userInfo.avatarUrl" alt />
         <p class="name">{{ userInfo.nickName }}</p>
-        <div v-if="rated" class="rating">+{{ score }}</div>
-        <!-- 用户这个句子得了多少分 -->
+        <div v-if="rated && num === 1" class="rating">
+          +{{ Math.ceil(singlePlayer.scores[number].total_score / 5) }}
+        </div>
+        <div v-if="rated && num === 2" class="rating">
+          +{{ Math.ceil(player.scores[number].total_score / 5) }}
+        </div>
       </div>
       <!-- 用户得分 -->
       <van-progress
-        :pivot-text="totalScore"
+        :pivot-text="playerTotalScore"
         color="#40b883"
-        :percentage="totalScore"
+        :percentage="playerTotalScore"
         stroke-width="4"
       />
     </div>
 
+    <!-- 对手 -->
+    <div v-if="num === 2" class="player">
+      <!-- 对手信息 -->
+      <div class="user">
+        <img :src="opponent.avatarUrl" alt />
+        <p class="name">{{ opponent.nickName }}</p>
+        <div v-if="rated" class="rating">
+          +{{ Math.ceil(opponent.scores[number].total_score / 5) }}
+        </div>
+      </div>
+      <!-- 对手得分 -->
+      <van-progress
+        :pivot-text="opponentTotalScore"
+        color="#40b883"
+        :percentage="opponentTotalScore"
+      />
+    </div>
+
     <!-- 问题 -->
-    <div class="question">
+    <div class="question" :style="{ height: 50 - players.length * 5 + 'vh' }">
       <h1 class="round">Round {{ number + 1 }}</h1>
       <!-- 句子和得分条 -->
       <div v-if="rated">
         <p class="sentence" v-html="sentence"></p>
         <div class="score">
-          Total score：
+          Total score
           <van-progress
-            :pivot-text="player.scores[number].total_score"
+            :pivot-text="
+              num === 1
+                ? singlePlayer.scores[number].total_score
+                : player.scores[number].total_score
+            "
             color="#40b883"
-            :percentage="player.scores[number].total_score"
+            :percentage="
+              num === 1
+                ? singlePlayer.scores[number].total_score
+                : player.scores[number].total_score
+            "
             stroke-width="4"
           />
         </div>
         <div class="score">
-          Accuracy score:
+          Accuracy score
           <van-progress
-            :pivot-text="player.scores[number].accuracy_score"
+            :pivot-text="
+              num === 1
+                ? singlePlayer.scores[number].accuracy_score
+                : player.scores[number].accuracy_score
+            "
             color="#40b883"
-            :percentage="player.scores[number].accuracy_score"
+            :percentage="
+              num === 1
+                ? singlePlayer.scores[number].accuracy_score
+                : player.scores[number].accuracy_score
+            "
             stroke-width="4"
           />
         </div>
         <div class="score">
-          Fluency score:
+          Fluency score
           <van-progress
-            :pivot-text="player.scores[number].fluency_score"
+            :pivot-text="
+              num === 1
+                ? singlePlayer.scores[number].fluency_score
+                : player.scores[number].fluency_score
+            "
             color="#40b883"
-            :percentage="player.scores[number].fluency_score"
+            :percentage="
+              num === 1
+                ? singlePlayer.scores[number].fluency_score
+                : player.scores[number].fluency_score
+            "
             stroke-width="4"
           />
         </div>
         <div class="score">
-          Standard score:
+          Standard score
           <van-progress
-            :pivot-text="player.scores[number].standard_score"
+            :pivot-text="
+              num === 1
+                ? singlePlayer.scores[number].standard_score
+                : player.scores[number].standard_score
+            "
             color="#40b883"
-            :percentage="player.scores[number].standard_score"
+            :percentage="
+              num === 1
+                ? singlePlayer.scores[number].standard_score
+                : player.scores[number].standard_score
+            "
             stroke-width="4"
           />
         </div>
         <div class="score">
-          Integrity score:
+          Integrity score
           <van-progress
-            :pivot-text="player.scores[number].integrity_score"
+            :pivot-text="
+              num === 1
+                ? singlePlayer.scores[number].integrity_score
+                : player.scores[number].integrity_score
+            "
             color="#40b883"
-            :percentage="player.scores[number].integrity_score"
+            :percentage="
+              num === 1
+                ? singlePlayer.scores[number].integrity_score
+                : player.scores[number].integrity_score
+            "
             stroke-width="4"
           />
         </div>
@@ -77,9 +140,10 @@
     <!-- 结果 -->
     <gameResult
       v-if="showResultDialog"
-      :players="[{ ...player, ...userInfo }]"
+      :players="resultPlayers"
       :sentences="resultSentences"
       :urls="urls"
+      :result="result"
       @retry="retry"
       @end="handleEnd"
     ></gameResult>
@@ -87,7 +151,7 @@
     <gameEnd
       v-if="showEnd"
       type="shadow"
-      :num="1"
+      :num="num"
       @close="showEnd = false"
       :params="params"
     ></gameEnd>
@@ -99,20 +163,18 @@
       position="bottom"
       :z-index="120"
     >
-      <!-- <div class="recordMsg">录音中。。。还剩{{ timerCount }}s</div> -->
       <van-button color="#ff6600" block @click="stopRecord">
         Stop recording {{ timerCount }}s
       </van-button>
     </van-popup>
 
-    <van-toast id="round" />
     <van-toast id="van-toast" />
   </div>
 </template>
 
 <script>
 import Toast from "../../wxcomponents/vant/toast/toast";
-import { mapState, mapGetters, mapMutations } from "vuex";
+import { mapState, mapGetters } from "vuex";
 import gameResult from "../../components/gameResult.vue";
 import gameEnd from "../../components/gameEnd.vue";
 const recorderManager = uni.getRecorderManager();
@@ -120,13 +182,14 @@ const audio = uni.createInnerAudioContext();
 audio.autoplay = true;
 
 export default {
-  name: "Player1",
   components: {
     gameResult,
     gameEnd,
   },
   data() {
     return {
+      num: 1, // 玩家人数
+
       noticeText: "",
       timer: null, // 倒计时
       timerCount: 10, // 倒计时时间
@@ -135,10 +198,9 @@ export default {
       resultSentences: [], // 传给result组件的sentences
       sentence: "", // 标注的句子
       rated: false, //还没打分
-      score: 0, //当前句子得分
 
       showRecordingDialog: false, // 录音弹框
-      player: {
+      singlePlayer: {
         scores: [],
         recordings: [],
       },
@@ -146,39 +208,46 @@ export default {
       showResultDialog: false, //结果弹框
       showEnd: false, // Analysis弹框
       params: {},
+      result: 0,
 
       isImproved: false,
     };
   },
   computed: {
     ...mapState(["userInfo"]),
-    totalScore() {
+    ...mapGetters(["players", "player", "opponent", "round"]),
+    playerTotalScore() {
+      if (!this.opponent)
+        return Math.ceil(this.singlePlayer.scores.reduce(this.sum, 0) / 5);
       return Math.ceil(this.player.scores.reduce(this.sum, 0) / 5);
+    },
+    opponentTotalScore() {
+      if (!this.opponent) return 0;
+      return Math.ceil(this.opponent.scores.reduce(this.sum, 0) / 5);
     },
     urls() {
       return this.sentences.map((s) => s.audioUrl);
-    }
+    },
+    resultPlayers() {
+      return this.num === 1
+        ? [{ ...this.singlePlayer, ...this.userInfo }]
+        : this.players;
+    },
   },
   methods: {
     sum: (a, b) => a + b.total_score,
-    // 准备
     preparing() {
       this.noticeText = "Preparing stage";
       Toast({
-        duration: 3000,
+        duration: 1000,
         message: "Please listen to the audio once before you start to record",
-        selector: "#van-toast",
         onClose: () => {
-          console.log("开始播放音频");
-          // 加载页面后首先播放句子录音
+          // 播放句子录音
           audio.src = this.sentences[this.number].audioUrl;
-          //   audio.play();
         },
       });
     },
-    // 开始录音
     startRecord() {
-      console.log("开始录音");
       this.noticeText = "Recording stage";
       this.showRecordingDialog = true;
       recorderManager.start({
@@ -190,88 +259,114 @@ export default {
       Toast({
         duration: 0,
         message: "Recording...",
-        selector: "#van-toast",
       });
       this.timerCount = 10;
       let timer = setInterval(() => {
         this.timerCount--;
         if (this.timerCount == 0) {
-          // 时间到，强制结束录音并上传
           clearInterval(timer);
           this.stopRecord();
         }
       }, 1000);
     },
-    //重新录音
     retry(index) {
       this.isImproved = true;
       this.number = index;
-      console.log(this.number);
-      console.log("重新开始录音");
-      this.showRecordingDialog = true;
-      recorderManager.start({
-        duration: 10000,
-        format: "mp3",
-        sampleRate: 16000,
-        numberOfChannels: 1,
-      });
-      Toast({
-        duration: 0,
-        message: "Recording...",
-        selector: "#van-toast",
-      });
-      this.timerCount = 10;
-      let timer = setInterval(() => {
-        this.timerCount--;
-        if (this.timerCount == 0) {
-          // 时间到，强制结束录音并上传
-          clearInterval(timer);
-          this.stopRecord();
-        }
-      }, 1000);
+      this.startRecord();
     },
-    // 结束录音
     stopRecord() {
-      console.log("结束录音");
       Toast.clear();
       recorderManager.stop();
       this.showRecordingDialog = false;
     },
+    continueGame() {
+      Toast.clear();
+      this.rated = true;
+      this.noticeText = "Rating stage";
+
+      let num = this.num === 1 ? this.number : this.round - 1;
+
+      setTimeout(() => {
+        if (num < 4) {
+          //开始下一轮
+          this.number++;
+          this.rated = false;
+          this.preparing();
+        } else {
+          // 游戏结束
+          this.noticeText = "Game over";
+          this.isEnded = true;
+          this.showResultDialog = true;
+          if (this.num > 1) {
+            let a = Math.ceil(this.player.scores.reduce(this.sum, 0) / 5);
+            let b = Math.ceil(this.opponent.scores.reduce(this.sum, 0) / 5);
+            this.result = a > b ? 1 : a < b ? -1 : 0;
+          }
+          // 生成战绩
+          let player = this.num === 1 ? this.singlePlayer : this.player;
+          this.userInfo.history.shadow.push({
+            time: new Date().getTime(),
+            exp: player.scores.reduce(this.sum, 0),
+            result: [
+              {
+                scores: player.scores.slice(),
+                sentences: this.resultSentences.slice(),
+                urls: this.urls.slice(),
+                recordings: player.recordings.slice(),
+              },
+            ],
+          });
+        }
+      }, 1000);
+    },
     handleEnd() {
       this.showRecordingDialog = false;
-      this.params = {
-        scores: this.player.scores.map((s) => s.total_score),
+      let player = this.num === 1 ? this.singlePlayer : this.player;
+      this.params.scores = player.scores.map((s) => s.total_score);
+      if (this.num > 1) {
+        this.params.result = this.result;
       }
-      console.log(this.params);
-      console.log(this.player.scores);
       this.showEnd = true;
       let target = this.userInfo.history.shadow[
         this.userInfo.history.shadow.length - 1
       ];
       if (this.isImproved) {
-        target.exp = this.player.scores.reduce(this.sum, 0);
+        target.exp = player.scores.reduce(this.sum, 0);
         target.result.push({
-          scores: this.player.scores,
+          scores: player.scores,
           sentences: this.resultSentences,
           urls: this.urls,
-          recordings: this.player.recordings,
+          recordings: player.recordings,
         });
       }
       this.$util.updateUserInfo("history", "shadow", target);
     },
   },
+  watch: {
+    round() {
+      this.continueGame();
+    },
+  },
   async onLoad() {
-    this.sentences = await this.$util.getSentences(); // 先获取句子，获取完之后才执行下面的语句
+    const pages = getCurrentPages();
+    const url = pages[pages.length - 1].$page.fullPath;
+    this.num = Number(this.$util.getUrlParams(url).num);
+    if (this.num === 1) {
+      this.sentences = await this.$util.getSentences();
+    } else {
+      this.sentences = this.$store.getters.sentences;
+    }
+
     this.preparing();
     audio.onPlay(() => {
       this.noticeText = "Listening stage";
     });
     audio.onEnded(() => {
-      console.log("播放结束");
       this.startRecord();
     });
-    // 录音结束后自动进行上传
+
     recorderManager.onStop(async (res) => {
+      // 上传录音+处理数据
       Toast.loading({
         duration: 0,
         message: "uploading...",
@@ -299,8 +394,15 @@ export default {
       standard_score = Math.ceil(standard_score * 20); // 标准度
       integrity_score = Math.ceil(integrity_score * 20); // 完整度
       total_score = Math.ceil(total_score * 20); // 总分
-      let words = word.filter((w) => w.total_score); // 单词数组
-
+      let words = word
+        .filter((w) => w.total_score)
+        .map((v, i) => {
+          // 单词数组
+          if (i === 0) {
+            v.content = v.content[0].toUpperCase() + v.content.slice(1);
+          }
+          return v;
+        });
       let sentence = "";
       words.forEach((w, index) => {
         if (w.total_score > 4.5) {
@@ -314,62 +416,52 @@ export default {
           sentence = sentence.trim() + ".";
         }
       });
-
       Toast.clear();
-
+      // 游戏进行中
       if (!this.isEnded) {
-        this.sentence = sentence[0].toUpperCase() + sentence.slice(1);
-        this.score = Math.ceil(total_score / 5); //转成20分制
-
-        // 传给子组件的参
-        this.player.scores.push({
-          accuracy_score,
-          fluency_score,
-          standard_score,
-          integrity_score,
-          total_score,
-        });
-        this.player.recordings.push(audioSrc);
+        this.sentence = sentence;
         this.resultSentences.push(sentence);
 
-        this.rated = true; //显示打分和句子
-        this.noticeText = "Rating stage";
-        setTimeout(() => {
-          if (this.number < 4) {
-            //开始下一轮
-            this.number++;
-            this.score = 0;
-            this.rated = false;
-            this.preparing();
-          } else {
-            // 游戏结束
-            this.noticeText = "Game over";
-            this.isEnded = true;
-            this.showResultDialog = true;
-            // 生成战绩
-            this.userInfo.history.shadow.push({
-              time: new Date().getTime(),
-              exp: this.player.scores.reduce(this.sum, 0),
-              result: [
-                {
-                  scores: this.player.scores.slice(),
-                  sentences: this.resultSentences.slice(),
-                  urls: this.urls.slice(),
-                  recordings: this.player.recordings.slice(),
-                },
-              ],
-            });
-          }
-        }, 5000);
+        // 单人模式
+        if (this.num === 1) {
+          // 传给子组件的参
+          this.singlePlayer.scores.push({
+            accuracy_score,
+            fluency_score,
+            standard_score,
+            integrity_score,
+            total_score,
+          });
+          this.singlePlayer.recordings.push(audioSrc);
+          this.continueGame();
+        } else {
+          // 双人模式
+          this.$util.updateGamePlayers(
+            {
+              accuracy_score,
+              fluency_score,
+              standard_score,
+              integrity_score,
+              total_score,
+            },
+            audioSrc
+          );
+          Toast({
+            message: "waiting for the other player...",
+            duration: 0,
+          });
+        }
       } else {
-        this.player.scores[this.number] = {
+        // 游戏结束，重录
+        let player = this.num === 1 ? this.singlePlayer : this.player;
+        player.scores[this.number] = {
           accuracy_score,
           fluency_score,
           standard_score,
           integrity_score,
           total_score,
         };
-        this.player.recordings[this.number] = audioSrc;
+        player.recordings[this.number] = audioSrc;
         this.resultSentences[this.number] = sentence;
       }
     });
@@ -383,19 +475,16 @@ export default {
   margin: 5% 5%;
   padding: 5% 10%;
   border: 1px solid;
-  height: 50vh;
   background-color: burlywood;
   .round {
     text-align: center;
-    font-size: x-large;
-    margin: 0 0 5% 0;
   }
   .sentence {
     text-align: center;
-    margin: 5% 0;
+    margin: 5px 0;
   }
   .score {
-    margin: 15px 0;
+    margin: 5px 0;
   }
 }
 
@@ -404,7 +493,7 @@ export default {
   margin: 5% 5%;
   padding: 5% 5%;
   border: 1px solid;
-  .userinfo {
+  .user {
     display: flex;
     align-items: center;
     margin-bottom: 20px;
