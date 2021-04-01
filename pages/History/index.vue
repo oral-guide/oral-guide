@@ -1,5 +1,5 @@
 <template>
-  <div class="history">
+  <div>
     <van-tabs
       active="shadow"
       sticky
@@ -15,17 +15,16 @@
         <div class="main">
           <!-- shadow game的战绩 -->
           <div class="history" v-for="(s, index) in shadowHistory" :key="index">
-            <div class="time">Time: {{ $util.formatTime(s.time) }}</div>
+            <div class="time">{{ $util.formatTime(s.time) }}</div>
             <div class="exp">Exp: {{ s.exp }}</div>
             <!-- 弄个组件 shadowResult.vue -->
-            <shadowResult :result="s.result" :state="state"></shadowResult>
+            <shadowResult :result="s.result"></shadowResult>
           </div>
         </div>
       </van-tab>
       <van-tab title="Who is the spy" name="spy">
         <div class="main">
           <!-- spy game的战绩 -->
-          
         </div>
       </van-tab>
     </van-tabs>
@@ -33,22 +32,22 @@
 </template>
 
 <script>
-import { mapState } from 'vuex';
+import { mapState } from "vuex";
 import shadowResult from "../../components/shadowResult.vue";
 export default {
   components: {
-    shadowResult
+    shadowResult,
   },
   data() {
     return {
       state: 0,
-    }
+    };
   },
   computed: {
-    ...mapState(['userInfo']),
+    ...mapState(["userInfo"]),
     shadowHistory() {
       return this.userInfo.history.shadow.slice().reverse();
-    }
+    },
   },
   methods: {
     // exchange() {
@@ -60,7 +59,7 @@ export default {
     //   console.log(this.state);
     // }
   },
-  mounted () {
+  mounted() {
     console.log(this.shadowHistory);
   },
 };
@@ -68,16 +67,25 @@ export default {
 
 <style lang="scss" scoped>
 .main {
-  position: relative;
-  margin:10px;
-  padding: 10px;
-  .history {
-    border: 1px solid;
-    margin-bottom:10px;
-    padding: 10px;
+  & {
+    position: relative;
+    margin: 10px;
+    padding: 20px;
   }
 
+  .history {
+    & {
+      border: 1px solid;
+      border-radius: 5px;
+      margin-bottom: 10px;
+      padding: 10px;
+    }
+    .time {
+      display: inline-block;
+    }
+    .exp {
+      float: right;
+    }
+  }
 }
-
-
 </style>
