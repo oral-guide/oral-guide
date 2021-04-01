@@ -348,10 +348,10 @@ export default {
               exp: this.player.scores.reduce(this.sum, 0),
               result: [
                 {
-                  scores: this.player.scores,
-                  sentences: this.resultSentences,
-                  urls: this.urls,
-                  recordings: this.player.recordings,
+                  scores: this.player.scores.slice(),
+                  sentences: this.resultSentences.slice(),
+                  urls: this.urls.slice(),
+                  recordings: this.player.recordings.slice(),
                 },
               ],
             });

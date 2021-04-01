@@ -16,7 +16,7 @@ function addZero(num) {
 }
 function formatTime(time) {
   let d = new Date(time);
-  return `${d.getFullYear()}-${addZero(d.getMonth + 1)}-${addZero(d.getDate())} ${addZero(d.getHours())}:${addZero(d.getMinutes())}`;
+  return `${d.getFullYear()}-${addZero(d.getMonth() + 1)}-${addZero(d.getDate())} ${addZero(d.getHours())}:${addZero(d.getMinutes())}`;
 }
 export default {
   getUrlParams,
