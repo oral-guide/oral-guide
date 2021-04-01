@@ -370,6 +370,7 @@ async function initializeGame(msg, ws) {
     // 1. 更新全局game对象
     let game = await startSpyGame(room);
     room.game = game;
+    room.isPlaying = true;
     roomBroadcast(room, {
         type: 'update',
         key: 'game',
@@ -398,7 +399,8 @@ async function startSpyGame(room) {
                 ...player,
                 isAlive: true,
                 isSpy: false,
-                records: [],
+                recordings: [],
+                scores: [],
                 votes: [],
                 voteStatus: 0
             }
@@ -646,7 +648,7 @@ function updatePlayerRecords(msg, ws) {
     } = msg.data;
     let player = room.game.players.find(player => player._id === userId);
     console.log(`【${player.nickName}】的records增加${url}`);
-    player.records.push(url);
+    player.recordings.push(url);
     room.game.finishCount++;
     console.log(`收到【${player.nickName}】的录音，finishCount: `, room.game.finishCount);
     if (room.game.finishCount === room.game.activePlayers()) {
@@ -662,8 +664,6 @@ function updatePlayerRecords(msg, ws) {
                 players: room.game.players
             }
         });
-
-        console.log(room.game.players.filter(p => p.isAlive).map(p => p.records));
 
         roomBroadcast(room, {
             type: 'updateGame',

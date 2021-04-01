@@ -71,7 +71,8 @@
                 player.voteStatus === 3 ||
                 (player.voteStatus === 2 &&
                   player.votes[player.votes.length - 1] === p._id) ||
-                player._id === p._id
+                player._id === p._id ||
+                !player.isAlive
               "
               @click="onVoteChange(p)"
             >
@@ -85,7 +86,7 @@
         type="danger"
         size="large"
         @click="abstain"
-        :disabled="player.voteStatus === 3"
+        :disabled="player.voteStatus === 3 || !player.isAlive"
         >Abstain</van-button
       >
     </van-dialog>
@@ -106,8 +107,8 @@
     <van-dialog
       use-slot
       title="Game result"
-      :show-confirm-button="false"
       :show="showFinishDialog"
+      @confirm="handleEnd"
     >
       <div class="content">
         {{ finishDialogText }}
@@ -123,11 +124,13 @@
       cancel-button-text="Back"
       confirm-button-text="Spectate"
       @cancel="back"
-      @confirm="spectate"
+      @confirm="showDeadDialog = false"
     >
-      You got the most votes and eliminated. Your identity is 【{{
-        player.isSpy ? "Spy" : "Civilian"
-      }}】. You can quit the game now or continue to spectate.
+      <div style="padding: 20px">
+        You got the most votes and eliminated. Your identity is 【{{
+          player.isSpy ? "Spy" : "Civilian"
+        }}】. You can quit the game now or continue to spectate.
+      </div>
     </van-dialog>
 
     <!-- best speaker投票 -->
@@ -198,12 +201,20 @@
         >Abstain</van-button
       >
     </van-dialog>
+
+    <gameEnd
+      v-if="showEnd"
+      type="spy"
+      @close="showEnd = false"
+      :params="params"
+    ></gameEnd>
   </div>
 </template>
 
 <script>
-import Seat from "../../components/spySeat";
-import word from "../../components/word";
+import Seat from "../../components/spySeat.vue";
+import word from "../../components/word.vue";
+import gameEnd from "../../components/gameEnd.vue";
 import Toast from "../../wxcomponents/vant/toast/toast";
 import { mapState, mapGetters, mapMutations } from "vuex";
 const recorderManager = uni.getRecorderManager();
@@ -215,6 +226,7 @@ export default {
   components: {
     Seat,
     word,
+    gameEnd
   },
   data() {
     return {
@@ -231,10 +243,13 @@ export default {
       resultDialogText: "",
       showFinishDialog: false,
       finishDialogText: "",
+      result: 0,
       noticeText: "",
       showWord: false,
       showDeadDialog: false,
       showBestDialog: false, //最佳发言人投票框
+      showEnd: false,
+      params: {},
     };
   },
   computed: {
@@ -275,6 +290,11 @@ export default {
       if (this.player.isAlive) {
         this.startRecord();
         this.startRecordTimer(time);
+      } else {
+        Toast({
+          message: "Waiting for the other players...",
+          duration: 0,
+        });
       }
     },
     startRecord() {
@@ -315,25 +335,27 @@ export default {
       // 等待其他玩家
       Toast({
         duration: 0,
-        message: "Waiting for the other player...",
+        message: "Waiting for the other players...",
       });
       // 上传录音
       const [err, data] = await this.$util.uploadAudio(filePath);
       let {
-        result: {
-          accuracy_score,
-          fluency_score,
-          standard_score,
-          total_score,
-        },
+        result: { accuracy_score, fluency_score, standard_score, total_score },
         audioSrc,
       } = JSON.parse(data.data);
       accuracy_score = Math.ceil(accuracy_score * 20); // 准确度
       fluency_score = Math.ceil(fluency_score * 20); // 流畅度
       standard_score = Math.ceil(standard_score * 20); // 标准度
       total_score = Math.ceil(total_score * 20); // 总分
-      // 将玩家录音的url推进records数组
-      this.player.records.push(audioSrc);
+      // 将玩家录音的url推进recordings数组
+      this.player.recordings.push(audioSrc);
+      // 将玩家本轮score推进scores数组
+      this.player.scores.push({
+        accuracy_score,
+        fluency_score,
+        standard_score,
+        total_score,
+      });
       // 通过websocket同步自己的录音
       this.$util.updatePlayerRecords(this.userInfo._id, audioSrc);
     },
@@ -346,7 +368,7 @@ export default {
         .map((player) => {
           return {
             userId: player._id,
-            url: player.records[player.records.length - 1],
+            url: player.recordings[player.recordings.length - 1],
           };
         });
       this.curIndex = 0;
@@ -356,7 +378,9 @@ export default {
       console.log(
         `onplaying: 当前speaker ID ${this.curSpeak}, 当前序号：${this.curIndex}`
       );
-      this.noticeText = `Speaker：【${this.players[this.curIndex].nickName}】`;
+      this.noticeText = `Speaker：【${
+        this.validPlayers[this.curIndex].nickName
+      }】`;
     },
     // 播放下一个玩家的录音
     playNext() {
@@ -375,7 +399,9 @@ export default {
         });
         return;
       }
-      this.noticeText = `Speaker：【${this.players[this.curIndex].nickName}】`;
+      this.noticeText = `Speaker：【${
+        this.validPlayers[this.curIndex].nickName
+      }】`;
       audio.src = this.audioSrcList[this.curIndex].url;
       this.setCurSpeak(this.audioSrcList[this.curIndex].userId);
     },
@@ -408,6 +434,12 @@ export default {
     abstain() {
       this.$util.vote(null);
     },
+    handleEnd() {
+      this.showFinishDialog = false;
+      this.params.scores = this.player.scores.map((s) => s.total_score);
+      this.params.result = this.result;
+      this.showEnd = true;
+    },
   },
   watch: {
     gameState(n) {
@@ -434,14 +466,7 @@ export default {
               }, 3000);
 
               player.isAlive = false;
-              if (player._id === this.userInfo._id) {
-                this.$util.updatePlayerInfo("isAlive", false);
-                // @TODO 死掉玩家显示dialog，选择退出房间或继续观战
-                setTimeout(() => {
-                  this.showDeadDialog = true;
-                }, 3000);
-                return;
-              }
+
               // 判断胜负
               let activeSpies = this.players.filter(
                 (player) => player.isAlive && player.isSpy
@@ -449,11 +474,9 @@ export default {
               let activePlayers = this.players.filter(
                 (player) => player.isAlive
               ).length;
-              let gameEnd = !activeSpies || activeSpies * 2 === activePlayers;
-              console.log(activeSpies);
-              console.log(activePlayers);
+              let isEnded = !activeSpies || activeSpies * 2 === activePlayers;
 
-              if (gameEnd) {
+              if (isEnded) {
                 console.log("结束！");
                 let winner = player.isSpy ? "Civilian" : "Spy";
                 let winners = this.players
@@ -472,7 +495,15 @@ export default {
                 }, timeout);
               } else {
                 // 游戏继续
-                this.onPreparing(15);
+                if (player._id === this.userInfo._id) { // 被淘汰玩家显示是否观战
+                  this.$util.updatePlayerInfo("isAlive", false);
+                  // @TODO 死掉玩家显示dialog，选择退出房间或继续观战
+                  setTimeout(() => {
+                    this.showDeadDialog = true;
+                  }, 3000);
+                  return;
+                }
+                this.onPreparing(3);
               }
             } else if (this.game.voteResult.length > 1) {
               // 多个玩家
@@ -504,6 +535,7 @@ export default {
           }
           break;
         case "recording":
+          console.log(111);
           this.onRecording(15);
           this.noticeText = "Recording stage";
           break;

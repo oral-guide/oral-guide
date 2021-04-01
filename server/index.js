@@ -76,7 +76,8 @@ let iatQueue = [];
 let iseFlag = false;
 let iatFlag = false;
 
-function getIse(src, sentence = "One more time", response, audioSrc, category) {
+function getIse(src, sentence, response, audioSrc, category) {
+    sentence = sentence || "One more time"
     if (iseFlag) {
         iseQueue.push({
             src,

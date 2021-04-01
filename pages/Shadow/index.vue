@@ -320,7 +320,7 @@ export default {
       }, 1000);
     },
     handleEnd() {
-      this.showRecordingDialog = false;
+      this.showResultDialog = false;
       let player = this.num === 1 ? this.singlePlayer : this.player;
       this.params.scores = player.scores.map((s) => s.total_score);
       if (this.num > 1) {

@@ -53,16 +53,17 @@ export default {
     ...mapState(["userInfo", "ranks"]),
     bonus() {
       let result = {};
+      let num = this.type === 'shadow' ? 1 : 2;
       if (this.params.result) {
         switch (this.params.result) {
           case 1:
-            result["Victory"] = 300;
+            result["Victory"] = 300 * num;
             break;
           case 0:
-            result["Draw"] = 200;
+            result["Draw"] = 200 * num;
             break;
           case -1:
-            result["Defeat"] = 100;
+            result["Defeat"] = 100 * num;
             break;
         }
       }
