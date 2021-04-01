@@ -6,10 +6,9 @@
     <!-- 座位 -->
     <div class="spy_seat">
       <seat :seatInfo="players[i]" v-for="i in 8" :key="i">{{ i + 1 }}</seat>
-      <!-- <seat :seatInfo="Info" v-for="i in 8" :key="i">{{i+1}}</seat> -->
     </div>
     <!-- 30s 倒计时 -->
-    <van-toast id="timer" />
+    <van-toast id="van-toast" />
     <!-- 录音倒计时 -->
     <van-popup
       :show="showRecordingDialog"
@@ -17,7 +16,6 @@
       :overlay="false"
       position="bottom"
     >
-      <!-- <div class="recordMsg">录音中。。。还剩{{ timerCount }}s</div> -->
       <van-button color="#ff6600" block @click="endRecord()">
         Stop recording
       </van-button>
@@ -76,7 +74,7 @@
                 player._id === p._id
               "
               @click="onVoteChange(p)"
-            > 
+            >
               Vote
             </van-button>
           </div>
@@ -114,6 +112,22 @@
       <div class="content">
         {{ finishDialogText }}
       </div>
+    </van-dialog>
+
+    <!-- 淘汰后选项 -->
+    <van-dialog
+      use-slot
+      :show="showDeadDialog"
+      title="You are eliminated!"
+      :show-cancel-button="true"
+      cancel-button-text="Back"
+      confirm-button-text="Spectate"
+      @cancel="back"
+      @confirm="spectate"
+    >
+      You got the most votes and eliminated. Your identity is 【{{
+        player.isSpy ? "Spy" : "Civilian"
+      }}】. You can quit the game now or continue to spectate.
     </van-dialog>
 
     <!-- best speaker投票 -->
@@ -169,7 +183,7 @@
                 player._id === p._id
               "
               @click="onVoteChange(p)"
-            > 
+            >
               Vote
             </van-button>
           </div>
@@ -219,6 +233,7 @@ export default {
       finishDialogText: "",
       noticeText: "",
       showWord: false,
+      showDeadDialog: false,
       showBestDialog: false, //最佳发言人投票框
     };
   },
@@ -237,7 +252,6 @@ export default {
       const toast = Toast({
         duration: 0,
         message: `${time}s before recording`,
-        selector: "#timer",
       });
       this.timerCount = time;
       this.timer = setInterval(() => {
@@ -250,7 +264,6 @@ export default {
           clearInterval(this.timer);
           Toast.clear();
           // 全体开始录音
-          console.log("recording starts");
           if (this.player.isAlive) {
             this.$util.updateGameState("recording");
           }
@@ -265,11 +278,10 @@ export default {
       }
     },
     startRecord() {
-      console.log("开始录音。。。");
       recorderManager.start({
         format: "mp3",
-        sampleRate: 44100,
-        encodeBitRate: 128000,
+        sampleRate: 16000,
+        numberOfChannels: 1,
       });
     },
     startRecordTimer(time) {
@@ -279,7 +291,6 @@ export default {
         duration: 0,
         position: "top",
         message: `${this.timerCount}s left`,
-        selector: "#timer",
       });
       this.timer = setInterval(() => {
         this.timerCount--;
@@ -292,29 +303,39 @@ export default {
         }
       }, 1000);
     },
-    // 结束录音的method：提前结束的按钮调用；或满30s系统自动调用（在onLoad中监听结束上传
+    // 结束录音的method：提前结束的按钮调用；或满15s系统自动调用（在onLoad中监听结束上传
     endRecord() {
       clearInterval(this.timer);
       this.showRecordingDialog = false;
       Toast.clear();
       recorderManager.stop();
-      // this.showRecordingDialog = false;
     },
     // 上传录音的method，可获取到后端传回的url
     async uploadAudio(filePath) {
       // 等待其他玩家
       Toast({
         duration: 0,
-        message: "waiting for the other player",
-        selector: "#timer",
+        message: "Waiting for the other player...",
       });
       // 上传录音
-      let res = await this.$util.uploadAudio(filePath);
-      let url = JSON.parse(res[1].data).data.url;
+      const [err, data] = await this.$util.uploadAudio(filePath);
+      let {
+        result: {
+          accuracy_score,
+          fluency_score,
+          standard_score,
+          total_score,
+        },
+        audioSrc,
+      } = JSON.parse(data.data);
+      accuracy_score = Math.ceil(accuracy_score * 20); // 准确度
+      fluency_score = Math.ceil(fluency_score * 20); // 流畅度
+      standard_score = Math.ceil(standard_score * 20); // 标准度
+      total_score = Math.ceil(total_score * 20); // 总分
       // 将玩家录音的url推进records数组
-      this.player.records.push(url);
+      this.player.records.push(audioSrc);
       // 通过websocket同步自己的录音
-      this.$util.updatePlayerRecords(this.userInfo._id, url);
+      this.$util.updatePlayerRecords(this.userInfo._id, audioSrc);
     },
 
     // 播放录音状态调用的方法，包括初始化播放以及依据顺序自动播放下一个
@@ -328,8 +349,6 @@ export default {
             url: player.records[player.records.length - 1],
           };
         });
-      // console.log(this.players);
-      // console.log(this.audioSrcList);
       this.curIndex = 0;
       const { userId, url } = this.audioSrcList[this.curIndex];
       audio.src = url;
@@ -337,18 +356,13 @@ export default {
       console.log(
         `onplaying: 当前speaker ID ${this.curSpeak}, 当前序号：${this.curIndex}`
       );
-      this.noticeText = `Speaker：【${
-        this.players[this.curIndex].nickName
-      }】`;
-      // 改变当前玩家isSpeaking状态为true
-      // this.players[this.curIndex].isSpeaking = true;
+      this.noticeText = `Speaker：【${this.players[this.curIndex].nickName}】`;
     },
-    // 根据方向，顺或反播放下一个玩家的录音
+    // 播放下一个玩家的录音
     playNext() {
       this.curIndex++;
       if (this.curIndex === this.audioSrcList.length) {
         // 这一轮结束，开始投票！
-        console.log("playing ends");
         this.round++;
         this.setCurSpeak("");
         if (this.player.isAlive) {
@@ -358,15 +372,10 @@ export default {
           duration: 0,
           forbidClick: true,
           message: "Voting starts",
-          selector: "#timer",
         });
         return;
       }
-      this.noticeText = `Speaker：【${
-        this.players[this.curIndex].nickName
-      }】`;
-      // audio.src = this.audioSrcList[this.curIndex].url;
-      console.log(`现在curIndex: ${this.curIndex}`);
+      this.noticeText = `Speaker：【${this.players[this.curIndex].nickName}】`;
       audio.src = this.audioSrcList[this.curIndex].url;
       this.setCurSpeak(this.audioSrcList[this.curIndex].userId);
     },
@@ -375,10 +384,6 @@ export default {
       this.showVoteDialog = true;
       this.startVoteTimer();
     },
-    // 投票按钮
-    onVoteChange(p) {
-      this.$util.vote(p._id);
-    },
     // 投票倒计时
     startVoteTimer() {
       let timer = setInterval(() => {
@@ -386,7 +391,6 @@ export default {
         if (this.voteTime == 0) {
           if (this.player.voteStatus == 1) {
             // 若倒计时结束玩家仍未选择投票，则默认该玩家弃票
-            console.log(`${this.player.nickName}选择了弃票`);
             this.$util.vote(null);
           }
           this.showVoteDialog = false;
@@ -398,9 +402,10 @@ export default {
         }
       }, 1000);
     },
-    // 选择弃票
+    onVoteChange(p) {
+      this.$util.vote(p._id);
+    },
     abstain() {
-      console.log(`${this.player.nickName} abstained`);
       this.$util.vote(null);
     },
   },
@@ -412,7 +417,7 @@ export default {
           // 新一轮开始
           if (!this.round) {
             // 首轮
-            this.onPreparing(30);
+            this.onPreparing(3);
             this.noticeText = "Preparing stage";
           } else {
             // 非首轮，投票结果判断
@@ -422,7 +427,7 @@ export default {
                 (player) => player._id === this.game.voteResult[0]
               );
               let identity = player.isSpy ? "Spy" : "Civilian";
-              this.resultDialogText = `${player.nickName}got the most votes and was eliminated. They are ${identity}。`;
+              this.resultDialogText = `【${identity}】${player.nickName} got the most votes and was eliminated.`;
               this.showResultDialog = true;
               setTimeout(() => {
                 this.showResultDialog = false;
@@ -434,7 +439,6 @@ export default {
                 // @TODO 死掉玩家显示dialog，选择退出房间或继续观战
                 setTimeout(() => {
                   this.showDeadDialog = true;
-                  
                 }, 3000);
                 return;
               }
@@ -501,7 +505,6 @@ export default {
           break;
         case "recording":
           this.onRecording(15);
-          // console.log(this.gameState);
           this.noticeText = "Recording stage";
           break;
         case "playing":
@@ -513,7 +516,6 @@ export default {
         case "voting":
           this.showWord = false;
           Toast.clear();
-          console.log("voting starts");
           this.onVoting();
           this.noticeText = "Voting stage";
           break;
@@ -524,7 +526,7 @@ export default {
   onLoad() {
     this.setCurSpeak("");
     this.showWord = true;
-    this.onPreparing(30);
+    this.onPreparing(3);
     // 录音结束后自动进行上传
     recorderManager.onStop((res) => {
       this.uploadAudio(res.tempFilePath);
@@ -535,13 +537,6 @@ export default {
     });
     let spy = this.players.find((p) => p.isSpy);
     console.log(`卧底是：【${spy.nickName}】`);
-    // audio.onPlay(() => {
-    //   console.log("开始播放", this.curSpeak);
-    // });
-    // audio.onError((res) => {
-    //   console.log(res.errMsg);
-    //   console.log(res.errCode);
-    // });
   },
 };
 </script>
@@ -549,7 +544,6 @@ export default {
 <style lang="scss" scoped>
 .spy {
   height: 100vh;
-  // padding-top: 10px;
   background-color: #f8f8f8;
   overflow: hidden;
 

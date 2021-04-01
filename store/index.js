@@ -54,7 +54,7 @@ const store = new Vuex.Store({
             return getters.player.isSpy ? state.game.words[0] : state.game.words[1];
         },
         sentences: state => {
-            if (!state.game) return {};
+            if (!state.game) return [];
             return state.game.sentences;
         },
         votedPlayers: (state, getters) => {

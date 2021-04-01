@@ -49,49 +49,66 @@ httpsServer.listen(SSLPORT, function () {
 // 科大讯飞API
 const CryptoJS = require('crypto-js');
 const parser = require('fast-xml-parser');
-const config = {
-    hostUrl: "wss://ise-api.xfyun.cn/v2/open-ise",
+const commonConfig = {
     host: "iat-api.xfyun.cn",
     appid: "603e3100",
     apiSecret: "934d1c575025b8ff46cd33688ccf6bc1",
     apiKey: "84746ae3315257f5accb7adb5796a7e0",
-    file: "./static/uploads/recordings/tmp_91a5d013b45584362e60e2fceb68ffdc.mp3",
-    uri: "/v2/open-ise",
     highWaterMark: 1280,
+}
+const iseConfig = {
+    hostUrl: "wss://ise-api.xfyun.cn/v2/open-ise",
+    uri: "/v2/open-ise",
+}
+const iatConfig = {
+    hostUrl: "wss://iat-api.xfyun.cn/v2/iat",
+    uri: "/v2/iat",
 }
 const FRAME = {
     STATUS_FIRST_FRAME: 0,
     STATUS_CONTINUE_FRAME: 1,
     STATUS_LAST_FRAME: 2
 }
-let status = FRAME.STATUS_FIRST_FRAME;
+let iseStatus = FRAME.STATUS_FIRST_FRAME;
+let iatStatus = FRAME.STATUS_FIRST_FRAME;
+let iseQueue = [];
+let iatQueue = [];
+let iseFlag = false;
+let iatFlag = false;
 
-
-function sendAudio(src, sentence, response, audioSrc) {
+function getIse(src, sentence = "One more time", response, audioSrc, category) {
+    if (iseFlag) {
+        iseQueue.push({
+            src,
+            sentence,
+            response,
+            audioSrc,
+            category
+        })
+        return;
+    }
+    iseFlag = true;
     let date = (new Date().toUTCString());
-    let wssUrl = config.hostUrl + "?authorization=" + getAuthStr(date) + "&date=" + date + "&host=" + config.host;
+    let wssUrl = iseConfig.hostUrl + "?authorization=" + getIseAuthStr(date) + "&date=" + date + "&host=" + commonConfig.host;
     let ws = new WebSocket(wssUrl);
     ws.on('open', (event) => {
-        // console.log("websocket connect!");
-        status = FRAME.STATUS_FIRST_FRAME;
+        iseStatus = FRAME.STATUS_FIRST_FRAME;
         let readerStream = fs.createReadStream(src, {
-            highWaterMark: config.highWaterMark
+            highWaterMark: commonConfig.highWaterMark
         });
         readerStream.on('data', function (chunk) {
-            send(ws, chunk, sentence);
+            sendIse(ws, chunk, sentence, category);
         });
         // 最终帧发送结束
         readerStream.on('end', function () {
-            status = FRAME.STATUS_LAST_FRAME;
-            send(ws, "");
+            iseStatus = FRAME.STATUS_LAST_FRAME;
+            sendIse(ws, "");
         });
     })
-    // ws.on('close', (code, reason) => {
-    //     console.log('closed!! ' + code + ': ' + reason);
-    // })
     ws.on('message', (data, err) => {
         if (err) {
             console.log(`err:${err}`)
+            iseFlag = false;
             return
         }
         let res = JSON.parse(data);
@@ -107,39 +124,118 @@ function sendAudio(src, sentence, response, audioSrc) {
                 ignoreAttributes: false
             });
             // let result = Math.ceil(grade.FinalResult.total_score.value * 20);
-            let result = grade.xml_result.read_sentence.rec_paper.read_chapter;
+            let result = category === 'read_sentence' ? grade.xml_result.read_sentence.rec_paper.read_chapter : grade.xml_result.read_chapter.rec_paper.read_chapter;
             response.json({
                 result,
                 audioSrc
             });
             ws.close(1000, '正常关闭');
             ws = null;
+            if (iseQueue.length) {
+                let { src, sentence, response, audioSrc, category } = iseQueue.shift();
+                iseFlag = false;
+                getIse(src, sentence, response, audioSrc, category);
+            } else {
+                iseFlag = false;
+            }
         }
     })
 }
-function getAuthStr(date) {
-    let signatureOrigin = `host: ${config.host}\ndate: ${date}\nGET ${config.uri} HTTP/1.1`;
-    let signatureSha = CryptoJS.HmacSHA256(signatureOrigin, config.apiSecret);
+function getIat(src, response, audioSrc) {
+    if (iatFlag) {
+        iatQueue.push({
+            src,
+            response,
+            audioSrc
+        })
+        return;
+    }
+    iatFlag = true;
+    let date = (new Date().toUTCString());
+    let wssUrl = iatConfig.hostUrl + "?authorization=" + getIatAuthStr(date) + "&date=" + date + "&host=" + commonConfig.host;
+    let ws = new WebSocket(wssUrl);
+    let iatResult = [];
+    ws.on('open', (event) => {
+        iatStatus = FRAME.STATUS_FIRST_FRAME;
+        let readerStream = fs.createReadStream(src, {
+            highWaterMark: commonConfig.highWaterMark
+        });
+        readerStream.on('data', function (chunk) {
+            sendIat(ws, chunk);
+        });
+        // 最终帧发送结束
+        readerStream.on('end', function () {
+            iatStatus = FRAME.STATUS_LAST_FRAME;
+            sendIat(ws, "");
+        });
+    })
+    ws.on('message', (data, err) => {
+        if (err) {
+            console.log(`err:${err}`)
+            return
+        }
+        let res = JSON.parse(data);
+        if (res.code != 0) {
+            console.log(`error code ${res.code}, reason ${res.message}`)
+            return
+        }
+
+        if (res.data.status == 2) {
+            let str = "";
+            iatResult.forEach(i => {
+                i.ws.forEach(j => {
+                    j.cw.forEach(k => {
+                        str += k.w;
+                    })
+                })
+            })
+            ws.close(1000, '正常关闭');
+            ws = null;
+            console.log(str);
+            getIse(src, str, response, audioSrc, "read_chapter");
+
+            if (iatQueue.length) {
+                let { src, response, audioSrc } = iatQueue.shift();
+                iatFlag = false;
+                getIat(src, response, audioSrc);
+            } else {
+                iatFlag = false;
+            }
+        }
+        iatResult[res.data.result.sn] = res.data.result;
+    })
+}
+function getIseAuthStr(date) {
+    let signatureOrigin = `host: ${commonConfig.host}\ndate: ${date}\nGET ${iseConfig.uri} HTTP/1.1`;
+    let signatureSha = CryptoJS.HmacSHA256(signatureOrigin, commonConfig.apiSecret);
     let signature = CryptoJS.enc.Base64.stringify(signatureSha);
-    let authorizationOrigin = `api_key="${config.apiKey}", algorithm="hmac-sha256", headers="host date request-line", signature="${signature}"`;
+    let authorizationOrigin = `api_key="${commonConfig.apiKey}", algorithm="hmac-sha256", headers="host date request-line", signature="${signature}"`;
+    let authStr = CryptoJS.enc.Base64.stringify(CryptoJS.enc.Utf8.parse(authorizationOrigin));
+    return authStr;
+}
+function getIatAuthStr(date) {
+    let signatureOrigin = `host: ${commonConfig.host}\ndate: ${date}\nGET ${iatConfig.uri} HTTP/1.1`
+    let signatureSha = CryptoJS.HmacSHA256(signatureOrigin, commonConfig.apiSecret);
+    let signature = CryptoJS.enc.Base64.stringify(signatureSha);
+    let authorizationOrigin = `api_key="${commonConfig.apiKey}", algorithm="hmac-sha256", headers="host date request-line", signature="${signature}"`;
     let authStr = CryptoJS.enc.Base64.stringify(CryptoJS.enc.Utf8.parse(authorizationOrigin));
     return authStr;
 }
 // 传输数据
-function send(ws, data, sentence) {
+function sendIse(ws, data, sentence, category = 'read_sentence') {
     let frame = "";
-    switch (status) {
+    switch (iseStatus) {
         case FRAME.STATUS_FIRST_FRAME:
             // 第一次数据发送：
             frame = {
-                "common": { app_id: config.appid },
+                "common": { app_id: commonConfig.appid },
                 "business": {
                     // 	服务类型指定 ise(开放评测)
                     "sub": "ise",
                     // 中文：cn_vip 英文：en_vip
                     "ent": "en_vip",
                     // 题型：句子朗读
-                    "category": "read_sentence",
+                    "category": category,
                     // 待评测文本编码 utf-8
                     "text": `[content]\n${sentence}`,
                     // 待评测文本编码 utf-8 gbk
@@ -157,28 +253,66 @@ function send(ws, data, sentence) {
             ws.send(JSON.stringify(frame))
             // 后续数据发送
             frame = {
-                "common": { "app_id": config.appid },
+                "common": { "app_id": commonConfig.appid },
                 "business": { "aus": 1, "cmd": "auw", "aue": "lame" },
                 "data": { "status": 1, "data": data.toString('base64') }
             }
-            status = FRAME.STATUS_CONTINUE_FRAME;
+            iseStatus = FRAME.STATUS_CONTINUE_FRAME;
             break;
         case FRAME.STATUS_CONTINUE_FRAME:
             frame = {
-                "common": { "app_id": config.appid },
+                "common": { "app_id": commonConfig.appid },
                 "business": { "aus": 2, "cmd": "auw", "aue": "lame" },
                 "data": { "status": 1, "data": data.toString('base64') }
             }
             break;
         case FRAME.STATUS_LAST_FRAME:
             frame = {
-                "common": { "app_id": config.appid },
+                "common": { "app_id": commonConfig.appid },
                 "business": { "aus": 4, "cmd": "auw", "aue": "lame" },
                 "data": { "status": 2, "data": data.toString('base64') }
             }
             break;
     }
     ws.send(JSON.stringify(frame))
+}
+
+function sendIat(ws, data) {
+    let frame = "";
+    let frameDataSection = {
+        "status": iatStatus,
+        "format": "audio/L16;rate=16000",
+        "audio": data.toString('base64'),
+        "encoding": "lame"
+    }
+    switch (iatStatus) {
+        case FRAME.STATUS_FIRST_FRAME:
+            frame = {
+                // 填充common
+                common: {
+                    app_id: commonConfig.appid
+                },
+                //填充business
+                business: {
+                    language: "en_us",
+                    domain: "iat",
+                    accent: "mandarin",
+                    vad_eos: 10000
+                },
+                //填充data
+                data: frameDataSection
+            }
+            iatStatus = FRAME.STATUS_CONTINUE_FRAME;
+            break;
+        case FRAME.STATUS_CONTINUE_FRAME:
+        case FRAME.STATUS_LAST_FRAME:
+            //填充frame
+            frame = {
+                data: frameDataSection
+            }
+            break;
+    }
+    ws.send(JSON.stringify(frame));
 }
 
 
@@ -194,15 +328,9 @@ var uploadAudio = multer({
 app.post('/upload/audio', uploadAudio.single("myFile"), function (req, res) {
     const { sentence } = req.body;
     if (sentence) {
-        sendAudio('./static/uploads/recordings/' + req.file.filename, sentence, res, 'https://humansean.com:8080/uploads/recordings/' + req.file.filename);
+        getIse('./static/uploads/recordings/' + req.file.filename, sentence, res, 'https://humansean.com:8080/uploads/recordings/' + req.file.filename);
     } else {
-        res.json({
-            status: 200,
-            msg: "success",
-            data: {
-                'url': 'https://humansean.com:8080/uploads/recordings/' + req.file.filename
-            }
-        })
+        getIat('./static/uploads/recordings/' + req.file.filename, res, 'https://humansean.com:8080/uploads/recordings/' + req.file.filename);
     }
 })
 
@@ -279,9 +407,8 @@ app.post('/weapp/updateUserInfo', async (req, res) => {
             })
             break;
         case 'history':
-            console.log(params);
             await mongodb.col('users').updateOne({ _id }, {
-                $push: { [`history.${subKey}`]: params } 
+                $push: { [`history.${subKey}`]: params }
             })
             break;
     }
