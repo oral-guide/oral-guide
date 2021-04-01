@@ -44,7 +44,7 @@
     </div>
 
     <!-- 问题 -->
-    <div class="question">
+    <div class="question" :style="{ height: 50 - players.length * 5 + 'vh' }">
       <h1 class="round">Round {{ number + 1 }}</h1>
       <!-- 句子和得分条 -->
       <div v-if="rated">
@@ -52,45 +52,85 @@
         <div class="score">
           Total score
           <van-progress
-            :pivot-text="num === 1 ? singlePlayer.scores[number].total_score : player.scores[number].total_score"
+            :pivot-text="
+              num === 1
+                ? singlePlayer.scores[number].total_score
+                : player.scores[number].total_score
+            "
             color="#40b883"
-            :percentage="num === 1 ? singlePlayer.scores[number].total_score : player.scores[number].total_score"
+            :percentage="
+              num === 1
+                ? singlePlayer.scores[number].total_score
+                : player.scores[number].total_score
+            "
             stroke-width="4"
           />
         </div>
         <div class="score">
           Accuracy score
           <van-progress
-            :pivot-text="num === 1 ? singlePlayer.scores[number].accuracy_score : player.scores[number].accuracy_score"
+            :pivot-text="
+              num === 1
+                ? singlePlayer.scores[number].accuracy_score
+                : player.scores[number].accuracy_score
+            "
             color="#40b883"
-            :percentage="num === 1 ? singlePlayer.scores[number].accuracy_score : player.scores[number].accuracy_score"
+            :percentage="
+              num === 1
+                ? singlePlayer.scores[number].accuracy_score
+                : player.scores[number].accuracy_score
+            "
             stroke-width="4"
           />
         </div>
         <div class="score">
           Fluency score
           <van-progress
-            :pivot-text="num === 1 ? singlePlayer.scores[number].fluency_score : player.scores[number].fluency_score"
+            :pivot-text="
+              num === 1
+                ? singlePlayer.scores[number].fluency_score
+                : player.scores[number].fluency_score
+            "
             color="#40b883"
-            :percentage="num === 1 ? singlePlayer.scores[number].fluency_score : player.scores[number].fluency_score"
+            :percentage="
+              num === 1
+                ? singlePlayer.scores[number].fluency_score
+                : player.scores[number].fluency_score
+            "
             stroke-width="4"
           />
         </div>
         <div class="score">
           Standard score
           <van-progress
-            :pivot-text="num === 1 ? singlePlayer.scores[number].standard_score : player.scores[number].standard_score"
+            :pivot-text="
+              num === 1
+                ? singlePlayer.scores[number].standard_score
+                : player.scores[number].standard_score
+            "
             color="#40b883"
-            :percentage="num === 1 ? singlePlayer.scores[number].standard_score : player.scores[number].standard_score"
+            :percentage="
+              num === 1
+                ? singlePlayer.scores[number].standard_score
+                : player.scores[number].standard_score
+            "
             stroke-width="4"
           />
         </div>
         <div class="score">
           Integrity score
           <van-progress
-            :pivot-text="num === 1 ? singlePlayer.scores[number].integrity_score : player.scores[number].integrity_score"
+            :pivot-text="
+              num === 1
+                ? singlePlayer.scores[number].integrity_score
+                : player.scores[number].integrity_score
+            "
             color="#40b883"
-            :percentage="num === 1 ? singlePlayer.scores[number].integrity_score : player.scores[number].integrity_score"
+            :percentage="
+              num === 1
+                ? singlePlayer.scores[number].integrity_score
+                : player.scores[number].integrity_score
+            "
             stroke-width="4"
           />
         </div>
@@ -103,6 +143,7 @@
       :players="resultPlayers"
       :sentences="resultSentences"
       :urls="urls"
+      :result="result"
       @retry="retry"
       @end="handleEnd"
     ></gameResult>
@@ -176,7 +217,8 @@ export default {
     ...mapState(["userInfo"]),
     ...mapGetters(["players", "player", "opponent", "round"]),
     playerTotalScore() {
-      if (!this.opponent) return Math.ceil(this.singlePlayer.scores.reduce(this.sum, 0) / 5);
+      if (!this.opponent)
+        return Math.ceil(this.singlePlayer.scores.reduce(this.sum, 0) / 5);
       return Math.ceil(this.player.scores.reduce(this.sum, 0) / 5);
     },
     opponentTotalScore() {
@@ -197,7 +239,7 @@ export default {
     preparing() {
       this.noticeText = "Preparing stage";
       Toast({
-        duration: 3000,
+        duration: 1000,
         message: "Please listen to the audio once before you start to record",
         onClose: () => {
           // 播放句子录音
@@ -275,7 +317,7 @@ export default {
             ],
           });
         }
-      }, 5000);
+      }, 1000);
     },
     handleEnd() {
       this.showRecordingDialog = false;
@@ -301,10 +343,8 @@ export default {
     },
   },
   watch: {
-    round(n) {
-      if (n < 5) {
-        this.continueGame();
-      }
+    round() {
+      this.continueGame();
     },
   },
   async onLoad() {
@@ -354,7 +394,15 @@ export default {
       standard_score = Math.ceil(standard_score * 20); // 标准度
       integrity_score = Math.ceil(integrity_score * 20); // 完整度
       total_score = Math.ceil(total_score * 20); // 总分
-      let words = word.filter((w) => w.total_score); // 单词数组
+      let words = word
+        .filter((w) => w.total_score)
+        .map((v, i) => {
+          // 单词数组
+          if (i === 0) {
+            v.content = v.content[0].toUpperCase() + v.content.slice(1);
+          }
+          return v;
+        });
       let sentence = "";
       words.forEach((w, index) => {
         if (w.total_score > 4.5) {
@@ -371,7 +419,8 @@ export default {
       Toast.clear();
       // 游戏进行中
       if (!this.isEnded) {
-        this.sentence = sentence[0].toUpperCase() + sentence.slice(1);
+        this.sentence = sentence;
+        this.resultSentences.push(sentence);
 
         // 单人模式
         if (this.num === 1) {
@@ -384,8 +433,6 @@ export default {
             total_score,
           });
           this.singlePlayer.recordings.push(audioSrc);
-          this.resultSentences.push(sentence);
-
           this.continueGame();
         } else {
           // 双人模式
@@ -428,7 +475,6 @@ export default {
   margin: 5% 5%;
   padding: 5% 10%;
   border: 1px solid;
-  height: 50vh;
   background-color: burlywood;
   .round {
     text-align: center;

@@ -37,18 +37,6 @@
 			}
 		},
 		{
-			"path": "pages/1Player/index",
-			"style": {
-				"navigationBarTitleText": "Shadowing exercise"
-			}
-		},
-		{
-			"path": "pages/2Player/index",
-			"style": {
-				"navigationBarTitleText": "Shadowing exercise"
-			}
-		},
-		{
 			"path": "pages/Home/index",
 			"style": {
 				"navigationBarTitleText": "Me"

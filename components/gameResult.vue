@@ -58,13 +58,17 @@
             @click="index++"
           />
           <div class="block"></div>
-          <van-button size="mini" color="#ff4101" @click="$emit('retry', index)">
+          <van-button
+            size="mini"
+            color="#ff4101"
+            @click="$emit('retry', index)"
+          >
             Try Again
           </van-button>
         </div>
         <div class="content" v-html="sentences[index]"></div>
         <div class="score">
-          Total score：
+          <span class="label">Total score</span>
           <van-progress
             :pivot-text="filteredPlayers[0].scores[index].total_score"
             color="#40b883"
@@ -73,7 +77,7 @@
           />
         </div>
         <div class="score">
-          Accuracy score:
+          <span class="label">Accuracy score</span>
           <van-progress
             :pivot-text="filteredPlayers[0].scores[index].accuracy_score"
             color="#40b883"
@@ -82,7 +86,7 @@
           />
         </div>
         <div class="score">
-          Fluency score:
+          <span class="label">Fluency score</span>
           <van-progress
             :pivot-text="filteredPlayers[0].scores[index].fluency_score"
             color="#40b883"
@@ -91,7 +95,7 @@
           />
         </div>
         <div class="score">
-          Standard score:
+          <span class="label">Standard score</span>
           <van-progress
             :pivot-text="filteredPlayers[0].scores[index].standard_score"
             color="#40b883"
@@ -100,7 +104,7 @@
           />
         </div>
         <div class="score">
-          Integrity score:
+          <span class="label">Integrity score</span>
           <van-progress
             :pivot-text="filteredPlayers[0].scores[index].integrity_score"
             color="#40b883"
@@ -134,8 +138,8 @@ export default {
       default: [],
     },
     result: {
-      type: Number
-    }
+      type: Number,
+    },
   },
   data() {
     return {
@@ -149,13 +153,13 @@ export default {
         return "Result";
       }
       switch (this.result) {
-        case 1:          
+        case 1:
           return "You win!";
         case 0:
           return "Draw!";
         case -1:
           return "You lose!";
-      }      
+      }
     },
     filteredPlayers() {
       if (!this.players.length) return [];
@@ -177,7 +181,7 @@ export default {
     },
     back() {
       // 生成战绩
-      
+
       uni.switchTab({
         url: "/pages/Index/index",
       });
@@ -236,9 +240,20 @@ export default {
   // float: right;
 }
 .sentence {
-  padding: 20px;
-  .score{
-    margin: 15px 0;
+  & {
+    padding: 10px 20px;
+  }
+  .content {
+    margin: 10px 0;
+  }
+  .score {
+    & {
+      margin: 15px 0;
+    }
+    .label {
+      display: inline-block;
+      margin-bottom: 7px;
+    }
   }
 }
 .block {

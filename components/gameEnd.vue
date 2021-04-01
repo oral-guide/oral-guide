@@ -62,7 +62,7 @@ export default {
             result["Draw"] = 200;
             break;
           case -1:
-            result["Draw"] = 100;
+            result["Defeat"] = 100;
             break;
         }
       }
