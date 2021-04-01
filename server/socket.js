@@ -465,12 +465,12 @@ function updateGamePlayers(msg, ws) {
     player.recordings.push(recording);
     if (!player.finished) {
         player.finished = true;
-        room.game.finishCount ++;
+        room.game.finishCount++;
     }
     if (room.game.finishCount === 2) {
         players.forEach(p => p.finished = false);
         room.game.finishCount = 0;
-        room.game.round ++;
+        room.game.round++;
         roomBroadcast(room, {
             type: 'update',
             key: 'game',
@@ -526,34 +526,8 @@ function updateGameState(msg, ws) {
             });
         }
         if (state === 'preparing') {
-            // 投票结束了
-
-            console.log('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~');
-            console.log('投票结束啦！！！！！！！！！！！！');
-            console.log('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~');
-            // 求投票结果
-            let votedPlayers = {};
-            let voteResult = [];
-            room.game.players.forEach(player => {
-                if (player.voteStatus === 2 && player.isAlive) {
-                    let targetId = player.votes[player.votes.length - 1];
-                    if (!votedPlayers[targetId]) votedPlayers[targetId] = [];
-                    votedPlayers[targetId].push(player);
-                }
-            })
-            let maxCount = 0;
-            let arr = Object.keys(votedPlayers);
-            arr.forEach(player => {
-                let count = votedPlayers[player].length;
-                maxCount = Math.max(count, maxCount);
-            })
-            for (let i = 0; i < arr.length; i++) {
-                const player = arr[i];
-                if (votedPlayers[player].length === maxCount) {
-                    voteResult.push(player);
-                }
-            }
-            console.log(votedPlayers);
+            let voteResult = getVoteResult(room.game.players);
+            console.log('---------------------投票结果----------------------');
             console.log(voteResult);
 
             roomBroadcast(room, {
@@ -562,7 +536,7 @@ function updateGameState(msg, ws) {
                 data: {
                     voteResult
                 }
-            });
+            })
             room.game.players.forEach(player => {
                 player.voteStatus = 0;
             })
@@ -580,38 +554,6 @@ function updateGameState(msg, ws) {
                     state: 'preparing'
                 }
             });
-
-
-            // if (room.game.voteResult.length === room.game.activePlayers()) {
-            //     // 收集到所有active玩家的投票结果后
-            //     room.game.targetPlayer = room.game.voteResult.findMostOccurence("target");
-            //     room.game.voteResult = [];
-            //     if (room.game.targetPlayer.length === 1) {
-            //         // 投出一名玩家，该轮结束
-            //         let player = room.game.players.find(player => player.name === room.game.targetPlayer[0]);
-            //         // 更新玩家状态
-            //         player.isAlive = false;
-            //         // 发起继续游戏的信号or发起游戏结束的信号
-            //         let identity = player.isSpy ? "卧底" : "平民";
-            //         let winner = player.isSpy ? "平民" : "卧底";
-            //         let gameEnd = !room.game.activeSpies() || (room.game.activeSpies() * 2) === room.game.activePlayers(); // 卧底没了，或卧底数等于平民数了，游戏结束
-            //         if (gameEnd) {
-            //             room.game.voteMsg = `得票数最高的是【${room.game.targetPlayer[0]}】，身份为${identity}，恭喜${winner}获得胜利！`;
-            //             // 游戏结束
-            //             room.game.state = "ending";
-            //         } else {
-            //             room.game.voteMsg = `得票数最高的是【${room.game.targetPlayer[0]}】，身份为${identity}，游戏继续！`;
-            //             // 游戏继续
-            //             room.game.state = "preparing";
-            //         }
-            //     } else {
-            //         // 投出两名或以上的玩家，发起重新投票的信号
-            //         room.game.voteMsg = `得票数最高的是【${room.game.targetPlayer.join("，")}】，重新进行投票！`;
-            //         room.game.state = "revoting";
-            //     }
-            //     // GO!
-            //     updateRooms(1, '', room);
-            // }
         }
 
         roomBroadcast(room, {
@@ -628,6 +570,31 @@ function updateGameState(msg, ws) {
             }
         });
     }
+}
+function getVoteResult(players) {
+    // 求投票结果
+    let votedPlayers = {};
+    let voteResult = [];
+    players.forEach(player => {
+        if (player.voteStatus === 2 && player.isAlive) {
+            let targetId = player.votes[player.votes.length - 1];
+            if (!votedPlayers[targetId]) votedPlayers[targetId] = [];
+            votedPlayers[targetId].push(player);
+        }
+    })
+    let maxCount = 0;
+    let arr = Object.keys(votedPlayers);
+    arr.forEach(player => {
+        let count = votedPlayers[player].length;
+        maxCount = Math.max(count, maxCount);
+    })
+    for (let i = 0; i < arr.length; i++) {
+        const player = arr[i];
+        if (votedPlayers[player].length === maxCount) {
+            voteResult.push(player);
+        }
+    }
+    return voteResult;
 }
 
 function updatePlayerRecords(msg, ws) {
@@ -701,13 +668,15 @@ function updatePlayerInfo(msg, ws) {
     } = msg.data;
     let player = room.game.players.find(player => player._id === userId);
     player[key] = value;
-    roomBroadcast(room, {
-        type: 'updateGame',
-        key: 'players',
-        data: {
-            players: room.game.players
-        }
-    });
+    if (key !== 'scores') {
+        roomBroadcast(room, {
+            type: 'updateGame',
+            key: 'players',
+            data: {
+                players: room.game.players
+            }
+        });
+    }
     roomBroadcast(room, {
         type: 'log',
         data: {
@@ -758,16 +727,63 @@ function vote(msg, ws) {
             players: room.game.players
         }
     });
-    let targetPlayer = room.game.players.find(player => player._id === target) || null;
-    let reply = target ? `玩家【${player.nickName}】将票投给了【${targetPlayer.nickName}】` : `玩家【${player.nickName}】弃票了。`
-    roomBroadcast(room, {
-        type: 'log',
-        data: {
-            msg: reply
-        }
-    });
+    // let targetPlayer = room.game.players.find(player => player._id === target) || null;
+    // let reply = target ? `玩家【${player.nickName}】将票投给了【${targetPlayer.nickName}】` : `玩家【${player.nickName}】弃票了。`
+    // roomBroadcast(room, {
+    //     type: 'log',
+    //     data: {
+    //         msg: reply
+    //     }
+    // });
 }
 
+// spy game 游戏结束
+function updateBestSpeaker(msg, ws) {
+    // msg = {
+    //     type: "updateBestSpeaker",
+    //     data: {
+    //         state: ''
+    //     }
+    // }
+    let {
+        roomId,
+        hallType
+    } = ws;
+    let room = rooms[hallType][roomId];
+    room.game.finishCount++;
+    if (room.game.finishCount === room.game.players.length) {
+        room.game.state = 'ending';
+        room.game.finishCount = 0;
+        room.isPlaying = false;
+        let voteResult = getVoteResult(room.game.players);
+        console.log('---------------------投票结果----------------------');
+        console.log(voteResult);
+
+        roomBroadcast(room, {
+            type: 'updateGame',
+            key: 'players',
+            data: {
+                players: room.game.players
+            }
+        });
+
+        roomBroadcast(room, {
+            type: 'updateGame',
+            key: 'voteResult',
+            data: {
+                voteResult
+            }
+        })
+
+        roomBroadcast(room, {
+            type: 'updateGame',
+            key: 'state',
+            data: {
+                state: 'ending'
+            }
+        });
+    }
+}
 
 function notify(ws, reply) {
     ws.send(JSON.stringify(reply));
@@ -867,6 +883,7 @@ module.exports = {
     updateGameState,
     updatePlayerRecords,
     updatePlayerInfo,
+    updateBestSpeaker,
     // 投票相关
     vote
 }

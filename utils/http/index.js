@@ -167,6 +167,12 @@ async function vote(target) {
         }
     })
 }
+// 通过best speaker投票结束spy game
+async function updateBestSpeaker(target) {
+    return await sendSocketMsg({
+        type: "updateBestSpeaker",
+    })
+}
 // 登录相关
 async function login() {
     let [err, {
@@ -284,6 +290,7 @@ export default {
     updatePlayerInfo,
     updatePlayerRecords,
     vote,
+    updateBestSpeaker,
     // shadow
     getSentences,
 

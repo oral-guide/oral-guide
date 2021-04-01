@@ -34,7 +34,7 @@ const store = new Vuex.Store({
         // curRoom(state) {
         //     return state.rooms[state.roomId]
         // }
-        players: (state, getters) => {
+        players: (state) => {
             return state.game ? state.game.players : [];
         },
         player: (state, getters) => {
@@ -46,7 +46,7 @@ const store = new Vuex.Store({
         round: (state) => {
             return state.game ? state.game.round : 0;
         },
-        gameState:(state,getters)=>{
+        gameState:(state)=>{
             return state.game ? state.game.state : ""
         },
         word: (state, getters) => {
@@ -61,7 +61,7 @@ const store = new Vuex.Store({
             let result = {};
             getters.players.forEach(player => {
                 // result[player._id] = [];
-                if (player.voteStatus === 2 && player.isAlive) {
+                if (player.voteStatus === 2) {
                     let targetId = player.votes[player.votes.length - 1];
                     if (!result[targetId]) result[targetId] = [];
                     result[targetId].push(player);

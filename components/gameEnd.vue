@@ -4,7 +4,6 @@
       use-slot
       title="Analysis"
       show
-      theme="round-button"
       :show-cancel-button="type === 'shadow'"
       cancelButtonText="Back"
       :confirmButtonText="type === 'shadow' ? 'Play again' : 'Back'"
@@ -53,7 +52,7 @@ export default {
     ...mapState(["userInfo", "ranks"]),
     bonus() {
       let result = {};
-      let num = this.type === 'shadow' ? 1 : 2;
+      let num = this.type === "shadow" ? 1 : 2;
       if (this.params.result) {
         switch (this.params.result) {
           case 1:
@@ -67,11 +66,13 @@ export default {
             break;
         }
       }
+      if (this.params.bestSpeaker) {
+        result["Best Speaker"] = 500;
+      }
       return result;
     },
     total() {
-      let arr = this.type === "shadow" ? this.params.scores : [];
-      return [...arr, ...Object.values(this.bonus)].reduce(this.sum, 0);
+      return [...this.params.scores, ...Object.values(this.bonus)].reduce(this.sum, 0);
     },
   },
   methods: {
@@ -100,10 +101,11 @@ export default {
     },
   },
   mounted() {
+    console.log(this.params);
     setTimeout(() => {
       this.userInfo.exp += this.total;
       if (this.userInfo.exp >= this.ranks[this.userInfo.lv + 1].exp) {
-        Toast('Level Up!!');
+        Toast("Level Up!!");
         this.userInfo.lv += 1;
         this.$util.updateUserInfo("lv");
       }
