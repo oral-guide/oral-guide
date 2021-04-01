@@ -266,7 +266,7 @@ export default {
   components: {
     Seat,
     word,
-    gameEnd
+    gameEnd,
   },
   data() {
     return {
@@ -290,7 +290,7 @@ export default {
       showBestDialog: false, //最佳发言人投票框
       showEnd: false,
       params: {},
-      rated:false, //打分与否
+      rated: false, //打分与否
       accuracy_score: 0,
       fluency_score: 0,
       standard_score: 0,
@@ -401,12 +401,12 @@ export default {
         standard_score,
         total_score,
       });
-      this.accuracy_score = accuracy_score,
-      this.fluency_score = fluency_score,
-      this.standard_score = standard_score,
-      this.total_score = total_score,
-      // 将玩家录音的url推进records数组
-      this.player.records.push(audioSrc);
+      (this.accuracy_score = accuracy_score),
+        (this.fluency_score = fluency_score),
+        (this.standard_score = standard_score),
+        (this.total_score = total_score),
+        // 将玩家录音的url推进records数组
+        this.player.recordings.push(audioSrc);
       // 通过websocket同步自己的录音
       this.$util.updatePlayerRecords(this.userInfo._id, audioSrc);
     },
@@ -462,19 +462,27 @@ export default {
       this.startVoteTimer();
     },
     // 投票倒计时
-    startVoteTimer() {
+    startVoteTimer(isEnded) {
       let timer = setInterval(() => {
         this.voteTime--;
         if (this.voteTime == 0) {
-          if (this.player.voteStatus == 1) {
-            // 若倒计时结束玩家仍未选择投票，则默认该玩家弃票
-            this.$util.vote(null);
-          }
-          this.showVoteDialog = false;
           clearInterval(timer);
           this.voteTime = 10;
-          if (this.player.isAlive) {
-            this.$util.updateGameState("preparing");
+          if (!isEnded) { // 普通投票
+            if (this.player.voteStatus == 1) {
+              // 若倒计时结束玩家仍未选择投票，则默认该玩家弃票
+              this.$util.vote(null);
+            }
+            this.showVoteDialog = false;
+            if (this.player.isAlive) {
+              this.$util.updateGameState("preparing");
+            }
+          } else { // Best Speaker投票
+            if (this.player.voteStatus == 1) {
+              // 若倒计时结束玩家仍未选择投票，则默认该玩家弃票
+              this.$util.vote(null);
+            }
+            this.showVoteDialog = false;
           }
         }
       }, 1000);
@@ -486,6 +494,8 @@ export default {
       this.$util.vote(null);
     },
     handleEnd() {
+      this.showBestDialog = true;
+      this.startVoteTimer();
       this.showFinishDialog = false;
       this.params.scores = this.player.scores.map((s) => s.total_score);
       this.params.result = this.result;
@@ -528,7 +538,6 @@ export default {
               let isEnded = !activeSpies || activeSpies * 2 === activePlayers;
 
               if (isEnded) {
-                console.log("结束！");
                 let winner = player.isSpy ? "Civilian" : "Spy";
                 let winners = this.players
                   .filter((p) => (player.isSpy ? !p.isSpy : p.isSpy))
@@ -538,15 +547,10 @@ export default {
                   this.showFinishDialog = true;
                   this.finishDialogText = `Congratulations!【${winner}】${winners} win！`;
                 }, 3000);
-                //显示best speaker投票
-                setTimeout(() => {
-                  this.showFinishDialog = false;
-                  this.showBestDialog = true;
-                  this.startVoteTimer();
-                }, timeout);
               } else {
                 // 游戏继续
-                if (player._id === this.userInfo._id) { // 被淘汰玩家显示是否观战
+                if (player._id === this.userInfo._id) {
+                  // 被淘汰玩家显示是否观战
                   this.$util.updatePlayerInfo("isAlive", false);
                   // @TODO 死掉玩家显示dialog，选择退出房间或继续观战
                   setTimeout(() => {
@@ -554,7 +558,9 @@ export default {
                   }, 3000);
                   return;
                 }
-                this.onPreparing(3);
+                setTimeout(() => {
+                  this.onPreparing(3);
+                }, 3000);
               }
             } else if (this.game.voteResult.length > 1) {
               // 多个玩家
@@ -586,7 +592,6 @@ export default {
           }
           break;
         case "recording":
-          console.log(111);
           this.onRecording(15);
           this.noticeText = "Recording stage";
           break;
@@ -600,7 +605,7 @@ export default {
         case "voting":
           this.showWord = false;
           Toast.clear();
-          this.rated = false;    
+          this.rated = false;
           this.onVoting();
           this.noticeText = "Voting stage";
           break;
