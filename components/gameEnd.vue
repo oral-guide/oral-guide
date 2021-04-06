@@ -72,7 +72,10 @@ export default {
       return result;
     },
     total() {
-      return [...this.params.scores, ...Object.values(this.bonus)].reduce(this.sum, 0);
+      return [...this.params.scores, ...Object.values(this.bonus)].reduce(
+        this.sum,
+        0
+      );
     },
   },
   methods: {
@@ -101,12 +104,13 @@ export default {
     },
   },
   mounted() {
-    console.log(this.params);
     setTimeout(() => {
       this.userInfo.exp += this.total;
       if (this.userInfo.exp >= this.ranks[this.userInfo.lv + 1].exp) {
         Toast("Level Up!!");
-        this.userInfo.lv += 1;
+        setTimeout(() => {
+          this.userInfo.lv += 1;
+        }, 1000);
         this.$util.updateUserInfo("lv");
       }
     }, 1000);

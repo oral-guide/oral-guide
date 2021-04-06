@@ -161,16 +161,12 @@
       use-slot
       :show="showDeadDialog"
       title="You are eliminated!"
-      :show-cancel-button="true"
-      cancel-button-text="Back"
-      confirm-button-text="Spectate"
-      @cancel="back"
-      @confirm="showDeadDialog = false"
+      :show-confirm-button="false"
     >
       <div style="padding: 20px">
         You got the most votes and eliminated. Your identity is 【{{
           player.isSpy ? "Spy" : "Civilian"
-        }}】. You can quit the game now or continue to spectate.
+        }}】.
       </div>
     </van-dialog>
 
@@ -289,7 +285,6 @@ export default {
       this.timerCount = time;
       const toast = Toast({
         duration: 0,
-        position: "top",
         message: `${this.timerCount}s left`,
       });
       this.timer = setInterval(() => {
@@ -320,13 +315,15 @@ export default {
       // 上传录音
       const [err, data] = await this.$util.uploadAudio(filePath);
       let {
-        result: { accuracy_score, fluency_score, standard_score, total_score },
+        result: { accuracy_score, fluency_score, standard_score },
         audioSrc,
       } = JSON.parse(data.data);
       accuracy_score = Math.ceil(accuracy_score * 20); // 准确度
       fluency_score = Math.ceil(fluency_score * 20); // 流畅度
       standard_score = Math.ceil(standard_score * 20); // 标准度
-      total_score = Math.ceil(total_score * 20); // 总分
+      let total_score = Math.ceil(
+        accuracy_score * 0.6 + fluency_score * 0.3 + standard_score * 0.1
+      ); // 总分
       // 将玩家录音的url推进recordings数组
       this.player.recordings.push(audioSrc);
       // 将玩家本轮score推进scores数组
@@ -436,12 +433,25 @@ export default {
       if (this.game.voteResult.includes(this.player._id)) {
         this.params.bestSpeaker = true;
       }
+      // 生成战绩
+      let history = {
+        time: new Date().getTime(),
+        exp: this.player.scores.reduce(this.sum, 0),
+        word: this.word,
+        result: [
+          {
+            scores: this.player.scores,
+            recordings: this.player.recordings,
+          },
+        ],
+      };
+      this.userInfo.history.spy.push(history);
+      this.$util.updateUserInfo("history", "spy", history);
       this.showEnd = true;
     },
   },
   watch: {
     gameState(n) {
-      if (!this.player.isAlive && n === "recording") return;
       switch (n) {
         case "preparing":
           // 新一轮开始
@@ -501,6 +511,9 @@ export default {
                   // @TODO 死掉玩家显示dialog，选择退出房间或继续观战
                   setTimeout(() => {
                     this.showDeadDialog = true;
+                    setTimeout(() => {
+                      this.showDeadDialog = false;
+                    }, 3000);
                   }, 3000);
                   return;
                 }
