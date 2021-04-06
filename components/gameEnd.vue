@@ -115,6 +115,11 @@ export default {
       }
     }, 1000);
     this.$util.updateUserInfo("exp", "", { exp: this.total });
+    let target = this.userInfo.history[this.type][
+      this.userInfo.history[this.type].length - 1
+    ];
+    target.exp = this.total;
+    this.$util.updateUserInfo("history", this.type, target);
   },
 };
 </script>

@@ -64,7 +64,7 @@ export default {
   }
 
   &_l {
-    width: 30vw;
+    width: 25vw;
 
     img {
       display: block;
@@ -75,7 +75,7 @@ export default {
   }
 
   &_m {
-    width: 58vw;
+    width: 70vw;
 
     p {
       font-size: 16px;

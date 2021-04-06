@@ -104,8 +104,6 @@ button::after {
   border: none;
 }
 ::v-deep .van-tag {
-  // margin-left: 7px;
   float: right;
-  top: -2px;
 }
 </style>>

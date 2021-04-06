@@ -218,10 +218,6 @@ export default {
       showEnd: false,
       params: {},
       rated:false, //打分与否
-      // accuracy_score: 0,
-      // fluency_score: 0,
-      // standard_score: 0,
-      // total_score: 0,
       isEnded: false,
       rated: false, //打分与否
       accuracy_score: 0,
@@ -326,7 +322,6 @@ export default {
       console.log(accuracy_score);
       console.log(fluency_score);
       console.log(standard_score);
-      console.log(total_score);
       accuracy_score = Math.ceil(accuracy_score * 20); // 准确度
       fluency_score = Math.ceil(fluency_score * 20); // 流畅度
       standard_score = Math.ceil(standard_score * 20); // 标准度
@@ -442,6 +437,7 @@ export default {
       this.showVoteDialog = true;
       this.startVoteTimer();
     },
+    sum: (a, b) => a + b.total_score,
     handleEnd() {
       this.params.scores = this.player.scores.map((s) => s.total_score);
       this.params.result = this.result;
@@ -451,7 +447,6 @@ export default {
       // 生成战绩
       let history = {
         time: new Date().getTime(),
-        exp: this.player.scores.reduce(this.sum, 0),
         word: this.word,
         result: [
           {
@@ -461,7 +456,6 @@ export default {
         ],
       };
       this.userInfo.history.spy.push(history);
-      this.$util.updateUserInfo("history", "spy", history);
       this.showEnd = true;
     },
   },

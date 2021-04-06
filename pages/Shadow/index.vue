@@ -306,7 +306,6 @@ export default {
           let player = this.num === 1 ? this.singlePlayer : this.player;
           this.userInfo.history.shadow.push({
             time: new Date().getTime(),
-            exp: player.scores.reduce(this.sum, 0),
             result: [
               {
                 scores: player.scores.slice(),
@@ -326,12 +325,10 @@ export default {
       if (this.num > 1) {
         this.params.result = this.result;
       }
-      this.showEnd = true;
-      let target = this.userInfo.history.shadow[
-        this.userInfo.history.shadow.length - 1
-      ];
       if (this.isImproved) {
-        target.exp = player.scores.reduce(this.sum, 0);
+        let target = this.userInfo.history.shadow[
+          this.userInfo.history.shadow.length - 1
+        ];
         target.result.push({
           scores: player.scores,
           sentences: this.resultSentences,
@@ -339,7 +336,7 @@ export default {
           recordings: player.recordings,
         });
       }
-      this.$util.updateUserInfo("history", "shadow", target);
+      this.showEnd = true;
     },
   },
   watch: {

@@ -125,7 +125,7 @@ function getIse(src, sentence, response, audioSrc, category) {
                 ignoreAttributes: false
             });
             // let result = Math.ceil(grade.FinalResult.total_score.value * 20);
-            let result = category === 'read_sentence' ? grade.xml_result.read_sentence.rec_paper.read_chapter : grade.xml_result.read_chapter.rec_paper.read_chapter;
+            let result = category === 'read_chapter' ? grade.xml_result.read_chapter.rec_paper.read_chapter : grade.xml_result.read_sentence.rec_paper.read_chapter;
             response.json({
                 result,
                 audioSrc
