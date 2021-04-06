@@ -12,36 +12,36 @@
       <div class="score">
         Total score:
         <van-progress
-          :pivot-text="total_score"
+          :pivot-text="player.scores[round].total_score"
           color="#40b883"
-          :percentage="total_score"
+          :percentage="player.scores[round].total_score"
           stroke-width="4"
         />
       </div>
       <div class="score">
         Accuracy score:
         <van-progress
-          :pivot-text="accuracy_score"
+          :pivot-text="player.scores[round].accuracy_score"
           color="#40b883"
-          :percentage="accuracy_score"
+          :percentage="player.scores[round].accuracy_score"
           stroke-width="4"
         />
       </div>
       <div class="score">
         Fluency score:
         <van-progress
-          :pivot-text="fluency_score"
-          color="#40b883"
-          :percentage="fluency_score"
+          :pivot-text="player.scores[round].fluency_score"
+          color="#40b883" 
+          :percentage="player.scores[round].fluency_score"
           stroke-width="4"
         />
       </div>
       <div class="score">
         Standard score:
         <van-progress
-          :pivot-text="standard_score"
+          :pivot-text="player.scores[round].standard_score"
           color="#40b883"
-          :percentage="standard_score"
+          :percentage="player.scores[round].standard_score"
           stroke-width="4"
         />
       </div>
@@ -217,6 +217,11 @@ export default {
       showDeadDialog: false,
       showEnd: false,
       params: {},
+      rated:false, //打分与否
+      // accuracy_score: 0,
+      // fluency_score: 0,
+      // standard_score: 0,
+      // total_score: 0,
       isEnded: false,
       rated: false, //打分与否
       accuracy_score: 0,
@@ -318,6 +323,10 @@ export default {
         result: { accuracy_score, fluency_score, standard_score },
         audioSrc,
       } = JSON.parse(data.data);
+      console.log(accuracy_score);
+      console.log(fluency_score);
+      console.log(standard_score);
+      console.log(total_score);
       accuracy_score = Math.ceil(accuracy_score * 20); // 准确度
       fluency_score = Math.ceil(fluency_score * 20); // 流畅度
       standard_score = Math.ceil(standard_score * 20); // 标准度
@@ -333,6 +342,12 @@ export default {
         standard_score,
         total_score,
       });
+      // this.accuracy_score = accuracy_score,
+      // this.fluency_score = fluency_score,
+      // this.standard_score = standard_score,
+      // this.total_score = total_score,
+      // 将玩家录音的url推进records数组
+      // this.player.recordings.push(audioSrc);
       this.$util.updatePlayerInfo("scores", this.player.scores);
       console.log(this.player.scores);
       (this.accuracy_score = accuracy_score),
@@ -606,6 +621,10 @@ export default {
     flex-direction: column;
     flex-wrap: wrap;
   }
+}
+
+.scores {
+  margin: 10px;
 }
 
 // img {
