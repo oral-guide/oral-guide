@@ -21,6 +21,14 @@
         <img v-if="curSpeak===seatInfo._id" class="speaker" src="../static/spy/speaking.png" alt />
       </div>
       <div class="seat_nick">{{seatInfo.nickName}}</div>
+      <van-tag
+        v-if="seatInfo"
+        :color="ranks[seatInfo.lv].color"
+        size="medium"
+        :plain="seatInfo.lv < 6"
+      >
+        Lv {{ seatInfo.lv }} | {{ ranks[seatInfo.lv].title }}
+      </van-tag>
     </div>
 
     <!-- 空座位 -->
@@ -43,25 +51,26 @@ export default {
   name: "spySeat",
   props: ["seatInfo"],
   computed: {
-    ...mapState(["curSpeak"]),
+    ...mapState(["curSpeak","ranks"]),
   },
 };
 </script>
 
 <style lang="scss" scoped>
 .seat {
-  margin: 0 60vw 0 0;
+  height: 32vw;
+  margin: 0 48vw 0 0;
 
   &_avatar {
     width: 16vw;
     height: 16vw;
-    margin-bottom: 2px;
+    margin: 0 auto 2px auto;
     border-radius: 50%;
     background-color: #fff;
     border: 1px solid #ccc;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    // display: flex;
+    // justify-content: center;
+    // align-items: center;
     position: relative;
 
     img {
@@ -116,8 +125,7 @@ export default {
   }
 
   &_nick {
-    width: 16vw;
-    height: 6vw;
+    height: 4vw;
     text-align: center;
     font-size: 12px;
     color: #333;
@@ -129,7 +137,7 @@ export default {
   &_empty {
     width: 16vw;
     height: 16vw;
-    margin-bottom: 6vw;
+    margin: 0 auto;
     border-radius: 50%;
     background-color: #fff;
     border: 1px solid #ccc;

@@ -8,7 +8,17 @@
       <!-- 玩家信息 -->
       <div class="user">
         <img :src="userInfo.avatarUrl" alt />
-        <p class="name">{{ userInfo.nickName }}</p>
+        <div class="user_r">
+          <p class="name">{{ userInfo.nickName }}</p>
+          <van-tag
+            v-if="userInfo"
+            :color="ranks[userInfo.lv].color"
+            size="medium"
+            :plain="userInfo.lv < 6"
+          >
+            Lv {{ userInfo.lv }} | {{ ranks[userInfo.lv].title }}
+          </van-tag>
+        </div>
         <div v-if="rated && num === 1" class="rating">
           +{{ Math.ceil(singlePlayer.scores[number].total_score / 5) }}
         </div>
@@ -30,7 +40,17 @@
       <!-- 对手信息 -->
       <div class="user">
         <img :src="opponent.avatarUrl" alt />
-        <p class="name">{{ opponent.nickName }}</p>
+        <div class="user_r">
+          <p class="name">{{ opponent.nickName }}</p>
+          <van-tag
+            v-if="opponent"
+            :color="ranks[opponent.lv].color"
+            size="medium"
+            :plain="opponent.lv < 6"
+          >
+            Lv {{ opponent.lv }} | {{ ranks[opponent.lv].title }}
+          </van-tag>
+        </div>
         <div v-if="rated" class="rating">
           +{{ Math.ceil(opponent.scores[number].total_score / 5) }}
         </div>
@@ -214,7 +234,7 @@ export default {
     };
   },
   computed: {
-    ...mapState(["userInfo"]),
+    ...mapState(["userInfo", "ranks"]),
     ...mapGetters(["players", "player", "opponent", "round"]),
     playerTotalScore() {
       if (!this.opponent)
@@ -502,6 +522,8 @@ export default {
     .name {
       font-size: 16px;
       font-weight: 700;
+    }
+    &_r {
       margin-left: 10px;
     }
   }

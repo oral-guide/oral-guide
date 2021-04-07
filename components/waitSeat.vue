@@ -9,6 +9,14 @@
       <!-- <img v-if="!userInfo" class="ban" src="../static/waitRoom/lock.png" alt=""> -->
     </div>
     <div class="seat_nick">{{userInfo ? userInfo.nickName : ''}}</div>
+    <van-tag
+      v-if="userInfo"
+      :color="ranks[userInfo.lv].color"
+      size="medium"
+      :plain="userInfo.lv < 6"
+    >
+      Lv {{ userInfo.lv }} | {{ ranks[userInfo.lv].title }}
+    </van-tag>
   </div>
 </template>
 
@@ -18,25 +26,23 @@ export default {
   name: 'waitSeat',
   props: ['userInfo'],
   computed: {
-    ...mapState(['curSpeak'])
+    ...mapState(['curSpeak', 'ranks'])
   }
 }
 </script>
 
 <style lang="scss" scoped>
 .seat {
-  margin: 0 60vw 0 0;
+  height: 32vw;
+  margin: 0 48vw 0 0;
 
   &_avatar {
     width: 16vw;
     height: 16vw;
-    margin-bottom: 2px;
+    margin: 0 auto 2px auto;
     border-radius: 50%;
     background-color: #fff;
     border: 1px solid #ccc;
-    display: flex;
-    justify-content: center;
-    align-items: center;
     position: relative;
 
     img {
@@ -77,14 +83,18 @@ export default {
   }
 
   &_nick {
-    width: 16vw;
-    height: 10vw;
+    height: 4vw;
     text-align: center;
     font-size: 12px;
     color: #333;
     white-space: nowrap;
     text-overflow: ellipsis;
     overflow: hidden;
+  }
+
+  // 不知道为什么无法生效
+  ::v-deep .van-tag {
+    margin: 0 auto;
   }
 }
 </style>

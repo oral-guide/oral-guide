@@ -8,10 +8,10 @@
       </div>
       <!-- 准备/取消准备/开始游戏按钮 -->
       <div class="wait_ready">
-        <!-- <van-button color="#ff4101" v-if="isOwner" @click="startGame">开始游戏</van-button> -->
-        <van-button color="#ff4101" v-if="isOwner" :disabled="!isAllReady" @click="startGame">Start</van-button>
+        <van-button color="#ff4101" v-if="isOwner" @click="startGame">开始游戏</van-button>
+        <!-- <van-button color="#ff4101" v-if="isOwner" :disabled="!isAllReady" @click="startGame">Start</van-button>
         <van-button color="#ff4101" v-else-if="!isReady" @click="toggleReady">Ready</van-button>
-        <van-button color="#ff4101" plain v-else @click="toggleReady">Quit</van-button>
+        <van-button color="#ff4101" plain v-else @click="toggleReady">Quit</van-button> -->
       </div>
       <!-- 发送语音 -->
       <div class="wait_speak">
@@ -127,7 +127,7 @@ export default {
   overflow: hidden;
 
   &_seat {
-    height: 112vw;
+    height: 128vw;
     margin-top: 10px;
     padding: 0 15px;
     display: flex;

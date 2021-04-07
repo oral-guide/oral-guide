@@ -16,11 +16,27 @@
         <img :src="player.avatarUrl" alt="">
       </div>
       <div class="before_matched_name">{{player.nickName}}</div>
+      <van-tag
+        v-if="player"
+        :color="ranks[player.lv].color"
+        size="medium"
+        :plain="player.lv < 6"
+      >
+        Lv {{ player.lv }} | {{ ranks[player.lv].title }}
+      </van-tag>
       <span>VS</span>
       <div class="before_matched_avatar">
         <img :src="opponent.avatarUrl" alt="">
       </div>
       <div class="before_matched_name">{{opponent.nickName}}</div>
+      <van-tag
+        v-if="opponent"
+        :color="ranks[opponent.lv].color"
+        size="medium"
+        :plain="opponent.lv < 6"
+      >
+        Lv {{ opponent.lv }} | {{ ranks[opponent.lv].title }}
+      </van-tag>
       <h3>Matched</h3>
     </div>
   </div>
@@ -38,7 +54,7 @@ export default {
     };
   },
   computed: {
-    ...mapState(['game']),
+    ...mapState(['game', 'ranks']),
     ...mapGetters(['player', 'opponent'])
   },
   methods: {
@@ -53,6 +69,7 @@ export default {
       uni.navigateTo({
         url: '/pages/Shadow/index?num=2'
       })
+      this.status = 0
     },
     // 开始匹配
     async startMatch () {

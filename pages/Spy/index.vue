@@ -608,9 +608,9 @@ export default {
   overflow: hidden;
 
   &_seat {
-    height: 94vw;
+    height: 128vw;
     margin-top: 10px;
-    padding: 0 10px;
+    padding: 0 15px;
     display: flex;
     flex-direction: column;
     flex-wrap: wrap;
