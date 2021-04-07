@@ -1,62 +1,36 @@
 <template>
   <div>
-    <!-- 单词提示框按钮 -->
-    <van-button
-      class="btn"
-      color="linear-gradient(to right, rgb(255, 96, 52), rgb(238, 10, 36))"
-      size="large"
-      @click="$emit('toggleShow')"
-    >
-      Toggle word
-    </van-button>
     <!-- 单词提示框 -->
     <van-popup
-      :show="showWord"
+      :show="true"
       round
       custom-style="height: 70%; width: 90%"
       :close-on-click-overlay="false"
-      @close="$emit('toggleShow')"
     >
       <!-- 图片和词语解释 -->
       <div>
-        <p class="title">{{ word.name }}</p>
-        <img class="wordImage" :src="word.imgUrl" />
+        <p class="title">{{ selectedWord.name }}</p>
+        <img class="wordImage" :src="selectedWord.imgUrl" />
         <div class="description">
           <div class="keywords">
-            <van-divider contentPosition="center"
-              >Some keywords here</van-divider
-            >
+            <van-divider contentPosition="center">Some keywords here</van-divider>
             <van-tag
               size="large"
               plain
               color="#ff4101"
               style="margin: 7px; display: inline-block"
-              v-for="(k, index) in word.keywords"
+              v-for="(k, index) in selectedWord.keywords"
               :key="index"
-            >
-              {{ k }}
-            </van-tag>
+            >{{ k }}</van-tag>
           </div>
           <div class="definitions">
             <van-divider contentPosition="center">Definitions</van-divider>
-            <div
-              class="definition"
-              v-for="(d, index) in word.definitions"
-              :key="index"
-            >
-              {{ d }}
-            </div>
+            <div class="definition" v-for="(d, index) in selectedWord.definitions" :key="index">{{ d }}</div>
           </div>
           <div class="sentences">
-            <van-divider contentPosition="center"
-              >Example sentences</van-divider
-            >
+            <van-divider contentPosition="center">Example sentences</van-divider>
             <ul>
-              <li
-                class="sentence"
-                v-for="(s, index) in word.sentences"
-                :key="index"
-              >
+              <li class="sentence" v-for="(s, index) in selectedWord.sentences" :key="index">
                 {{ s.english }}
                 <br />
                 {{ s.chinese }}
@@ -66,9 +40,7 @@
         </div>
       </div>
       <!-- 关闭按钮 -->
-      <van-button class="close" color="#ff6600" @click="$emit('toggleShow')"
-        >X</van-button
-      >
+      <van-button class="close" color="#ff6600" @click="$emit('toggleShow')">X</van-button>
     </van-popup>
   </div>
 </template>
@@ -77,16 +49,17 @@
 import { mapGetters } from "vuex";
 export default {
   props: {
-    showWord: {
-      type: Boolean,
-    },
+      resultWord: {
+        type: Object,
+        default: null
+      }
   },
   computed: {
     ...mapGetters(["word"]),
-  },
-  mounted() {
-    console.log(this.word);
-  },
+    selectedWord() {
+      return this.resultWord || this.word;
+    }
+  }
 };
 </script>
 
@@ -116,12 +89,14 @@ export default {
   text-align: center;
 }
 
-.definitions, .sentences {
+.definitions,
+.sentences {
   padding: 10px;
   margin-top: 10px;
 }
 
-.definition, .sentence {
+.definition,
+.sentence {
   & {
     padding: 10px 5px;
     border-bottom: 1px dashed #ddd;
@@ -137,10 +112,4 @@ export default {
   top: 0;
 }
 
-.btn {
-  position: absolute;
-  left: 0;
-  bottom: 0;
-  width: 100%;
-}
 </style>

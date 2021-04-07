@@ -2,7 +2,16 @@
   <div class="spy">
     <!-- 通知栏 -->
     <van-notice-bar color="#ff4101" left-icon="volume-o" :text="noticeText" />
-    <word :showWord="showWord" @toggleShow="showWord = !showWord"></word>
+    <!-- 单词提示框按钮 -->
+    <van-button
+      class="btn"
+      color="linear-gradient(to right, rgb(255, 96, 52), rgb(238, 10, 36))"
+      size="large"
+      @click="showWord = !showWord"
+    >
+      Toggle word
+    </van-button>
+    <word v-if="showWord" @toggleShow="showWord = !showWord"></word>
     <!-- 座位 -->
     <div class="spy_seat">
       <seat :seatInfo="players[i]" v-for="i in 8" :key="i">{{ i + 1 }}</seat>
@@ -614,6 +623,13 @@ export default {
     display: flex;
     flex-direction: column;
     flex-wrap: wrap;
+  }
+
+  .btn {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 100%;
   }
 }
 
