@@ -89,58 +89,57 @@ function getIse(src, sentence, response, audioSrc, category) {
         return;
     }
     iseFlag = true;
-    let date = (new Date().toUTCString());
-    let wssUrl = iseConfig.hostUrl + "?authorization=" + getIseAuthStr(date) + "&date=" + date + "&host=" + commonConfig.host;
-    let ws = new WebSocket(wssUrl);
-    ws.on('open', (event) => {
-        iseStatus = FRAME.STATUS_FIRST_FRAME;
-        let readerStream = fs.createReadStream(src, {
-            highWaterMark: commonConfig.highWaterMark
+let date = (new Date().toUTCString());
+let wssUrl = iseConfig.hostUrl + "?authorization=" + getIseAuthStr(date) + "&date=" + date + "&host=" + commonConfig.host;
+let ws = new WebSocket(wssUrl);
+ws.on('open', (event) => {
+    iseStatus = FRAME.STATUS_FIRST_FRAME;
+    let readerStream = fs.createReadStream(src, {
+        highWaterMark: commonConfig.highWaterMark
+    });
+    readerStream.on('data', function (chunk) {
+        sendIse(ws, chunk, sentence, category);
+    });
+    // 最终帧发送结束
+    readerStream.on('end', function () {
+        iseStatus = FRAME.STATUS_LAST_FRAME;
+        sendIse(ws, "");
+    });
+})
+ws.on('message', (data, err) => {
+    if (err) {
+        console.log(`err:${err}`)
+        iseFlag = false;
+        return
+    }
+    let res = JSON.parse(data);
+    if (res.code != 0) {
+        console.log(`error code ${res.code}, reason ${res.message}`)
+        return
+    }
+    if (res.data.status == 2) {
+        const { data } = res.data;
+        let b = Buffer.from(data, 'base64');
+        let grade = parser.parse(b.toString(), {
+            attributeNamePrefix: '',
+            ignoreAttributes: false
         });
-        readerStream.on('data', function (chunk) {
-            sendIse(ws, chunk, sentence, category);
+        let result = category === 'read_chapter' ? grade.xml_result.read_chapter.rec_paper.read_chapter : grade.xml_result.read_sentence.rec_paper.read_chapter;
+        response.json({
+            result,
+            audioSrc
         });
-        // 最终帧发送结束
-        readerStream.on('end', function () {
-            iseStatus = FRAME.STATUS_LAST_FRAME;
-            sendIse(ws, "");
-        });
-    })
-    ws.on('message', (data, err) => {
-        if (err) {
-            console.log(`err:${err}`)
+        ws.close(1000, '正常关闭');
+        ws = null;
+        if (iseQueue.length) {
+            let { src, sentence, response, audioSrc, category } = iseQueue.shift();
             iseFlag = false;
-            return
+            getIse(src, sentence, response, audioSrc, category);
+        } else {
+            iseFlag = false;
         }
-        let res = JSON.parse(data);
-        if (res.code != 0) {
-            console.log(`error code ${res.code}, reason ${res.message}`)
-            return
-        }
-        if (res.data.status == 2) {
-            const { data } = res.data;
-            let b = Buffer.from(data, 'base64');
-            let grade = parser.parse(b.toString(), {
-                attributeNamePrefix: '',
-                ignoreAttributes: false
-            });
-            // let result = Math.ceil(grade.FinalResult.total_score.value * 20);
-            let result = category === 'read_chapter' ? grade.xml_result.read_chapter.rec_paper.read_chapter : grade.xml_result.read_sentence.rec_paper.read_chapter;
-            response.json({
-                result,
-                audioSrc
-            });
-            ws.close(1000, '正常关闭');
-            ws = null;
-            if (iseQueue.length) {
-                let { src, sentence, response, audioSrc, category } = iseQueue.shift();
-                iseFlag = false;
-                getIse(src, sentence, response, audioSrc, category);
-            } else {
-                iseFlag = false;
-            }
-        }
-    })
+    }
+})
 }
 function getIat(src, response, audioSrc) {
     if (iatFlag) {

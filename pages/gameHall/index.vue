@@ -5,7 +5,7 @@
       <!-- 创建房间 -->
       <van-button color="#ff4101" block @click="showAddDialog">Create a room</van-button>
       <!-- 房间列表 -->
-      <van-empty description="There is no room now, create one." v-if="!roomList || !roomList.length" />
+      <van-empty description="There is no room now, create one." v-if="!roomList" />
       <div
         class="hall_room"
         v-else

@@ -475,7 +475,7 @@ export default {
           // 新一轮开始
           if (!this.round) {
             // 首轮
-            this.onPreparing(3);
+            this.onPreparing(30);
             this.noticeText = "Preparing stage";
           } else {
             // 非首轮，投票结果判断
@@ -595,7 +595,7 @@ export default {
   onLoad() {
     this.setCurSpeak("");
     this.showWord = true;
-    this.onPreparing(3);
+    this.onPreparing(30);
     // 录音结束后自动进行上传
     recorderManager.onStop((res) => {
       this.uploadAudio(res.tempFilePath);

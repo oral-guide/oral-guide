@@ -259,7 +259,7 @@ export default {
     preparing() {
       this.noticeText = "Preparing stage";
       Toast({
-        duration: 1000,
+        duration: 3000,
         message: "Please listen to the audio once before you start to record",
         onClose: () => {
           // 播放句子录音
@@ -336,7 +336,7 @@ export default {
             ],
           });
         }
-      }, 1000);
+      }, 5000);
     },
     handleEnd() {
       this.showResultDialog = false;

@@ -248,7 +248,7 @@ export default {
   }
   .score {
     & {
-      margin: 15px 0;
+      margin: 7px 0;
     }
     .label {
       display: inline-block;
