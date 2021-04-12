@@ -88,6 +88,7 @@ export default {
       }
       &.cross {
         position: absolute;
+        top: 0;
         // width: 17vw;
         // height: 17vw;
       }
