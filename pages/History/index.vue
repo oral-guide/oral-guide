@@ -12,7 +12,7 @@
       title-active-color="#ff4101"
       @change="handleChange"
     >
-      <van-tab title="Shadow Exercise" name="shadow">
+      <van-tab title="Shadowing Exercise" name="shadow">
         <template v-if="game === 'shadow'">
           <div v-if="shadowHistory.length > 0" class="main">
             <!-- shadow game的战绩 -->
