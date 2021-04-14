@@ -17,7 +17,7 @@
       <seat :seatInfo="players[i]" v-for="i in 8" :key="i">{{ i + 1 }}</seat>
     </div>
     <!-- 录音得分情况 -->
-    <div class="scores" v-if="rated">
+    <div class="scores" v-if="rated && player.isAlive">
       <div class="score">
         Total score:
         <van-progress
